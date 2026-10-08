@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>天幕动画播放器</title>
+  <link rel="stylesheet" href="/node_modules/lxgw-wenkai-webfont/lxgwwenkai-regular.css">
+  <link rel="stylesheet" href="/node_modules/lxgw-wenkai-webfont/lxgwwenkai-bold.css">
+  <link rel="stylesheet" href="/node_modules/@fontsource/ma-shan-zheng/400.css">
+  <link rel="stylesheet" href="/engine/style.css">
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="controls">
+    <button id="play">播放</button>
+    <span id="time">0.0s</span>
+    <input id="seek" type="range" min="0" max="1000" value="0">
+    <select id="scenes"></select>
+  </div>
+  <audio id="audio" preload="auto"></audio>
+  <script type="module">
+    import { Player } from '/engine/engine.js';
+
+    const params = new URLSearchParams(location.search);
+    const timelineUrl = params.get('timeline');
+    const interactive = params.has('interactive');
+    const stage = document.getElementById('stage');
+    const player = new Player(stage);
+
+    window.HCV = {
+      ready: false,
+      error: null,
+      player,
+      async renderAt(t) {
+        await player.renderAt(t);
+      },
+    };
+
+    try {
+      const timeline = await (await fetch(timelineUrl)).json();
+      await player.load(timeline);
+      await player.renderAt(Number(params.get('t') || 0));
+      window.HCV.timeline = timeline;
+      window.HCV.ready = true;
+      if (interactive) setupInteractive(timeline);
+    } catch (err) {
+      console.error(err);
+      window.HCV.error = String(err && err.stack || err);
+    }
+
+    function setupInteractive(timeline) {
+      document.body.classList.add('interactive');
+      const fit = () => {
+        const s = Math.min(innerWidth / 1920, (innerHeight - 48) / 1080);
+        stage.style.transform = `scale(${s})`;
+        stage.style.marginBottom = `${1080 * (s - 1)}px`;
+        stage.style.marginRight = `${1920 * (s - 1)}px`;
+      };
+      fit();
+      addEventListener('resize', fit);
+      const audio = document.getElementById('audio');
+      const audioUrl = params.get('audio');
+      if (audioUrl) audio.src = audioUrl;
+      const seek = document.getElementById('seek');
+      const timeEl = document.getElementById('time');
+      const btn = document.getElementById('play');
+      const sel = document.getElementById('scenes');
+      for (const s of timeline.scenes) sel.appendChild(new Option(`${s.id} · ${(s.lines[0]?.text || s.caption || '').slice(0, 16)}`, s.start));
+      let playing = false;
+      let t = 0;
+      let last = 0;
+      const draw = async () => {
+        await player.renderAt(t);
+        seek.value = String(Math.round((t / timeline.duration) * 1000));
+        timeEl.textContent = `${t.toFixed(1)}s / ${timeline.duration.toFixed(1)}s`;
+      };
+      const tick = async (now) => {
+        if (!playing) return;
+        if (audioUrl && !audio.paused) t = audio.currentTime;
+        else t += (now - last) / 1000;
+        last = now;
+        if (t >= timeline.duration) { playing = false; btn.textContent = '播放'; }
+        await draw();
+        requestAnimationFrame(tick);
+      };
+      btn.onclick = () => {
+        playing = !playing;
+        btn.textContent = playing ? '暂停' : '播放';
+        if (playing) {
+          if (audioUrl) { audio.currentTime = t; audio.play(); }
+          last = performance.now();
+          requestAnimationFrame(tick);
+        } else audio.pause();
+      };
+      seek.oninput = () => { t = (seek.value / 1000) * timeline.duration; audio.currentTime = t; draw(); };
+      sel.onchange = () => { t = Number(sel.value); audio.currentTime = t; draw(); };
+      addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
+    }
+  </script>
+</body>
+</html>

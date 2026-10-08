@@ -1,0 +1,30 @@
+{
+  "name": "history-claude-video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "用 Claude 绘制动画、Gemini 配音与配乐，生成《天幕的魔女》风格的中国历史动画视频",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "hcv": "src/cli.js"
+  },
+  "scripts": {
+    "build": "node src/cli.js build",
+    "tts": "node src/cli.js tts",
+    "music": "node src/cli.js music",
+    "render": "node src/cli.js render",
+    "still": "node src/cli.js still",
+    "preview": "node src/cli.js preview",
+    "write": "node src/cli.js write",
+    "check": "node src/cli.js check"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
+    "@fontsource/ma-shan-zheng": "^5.2.0",
+    "lxgw-wenkai-webfont": "^1.7.0",
+    "playwright": "1.56.1",
+    "undici": "^7.16.0"
+  }
+}

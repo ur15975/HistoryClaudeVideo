@@ -1,0 +1,313 @@
+{
+  "id": "zhang-qian",
+  "title": "凿空",
+  "subtitle": "张骞出使西域",
+  "description": "公元前138年前后，张骞奉汉武帝之命出使大月氏，两度被匈奴扣留，十三年后与甘父二人归汉。依据《史记·大宛列传》《汉书·张骞传》。",
+  "sources": ["《史记·大宛列传》", "《汉书·张骞李广利传》"],
+
+  "cast": {
+    "narrator": { "name": "旁白", "voice": "Charon", "style": "平静、有画面感的纪录片旁白，语速适中" },
+    "wudi": { "name": "汉武帝", "voice": "Orus", "style": "年轻帝王，威严而有雄心", "color": "#26201f" },
+    "zhangqian": { "name": "张骞", "voice": "Iapetus", "style": "沉着、坚定，声音不大", "color": "#33476a" },
+    "chanyu": { "name": "军臣单于", "voice": "Algenib", "style": "傲慢，带着几分嘲弄", "color": "#5b2f2a" },
+    "huqi": { "name": "胡妻", "voice": "Vindemiatrix", "style": "温柔、压低声音，带着不舍", "color": "#a8442f" },
+    "ganfu": { "name": "甘父", "voice": "Fenrir", "style": "急促、有力，压着嗓子", "color": "#8e5a35" }
+  },
+
+  "characters": {
+    "wudi": { "preset": "emperor", "expression": "serious" },
+    "zhangqian": { "preset": "han_official", "robeColor": "#33476a", "collarColor": "#a8382a", "expression": "determined" },
+    "ganfu": { "preset": "xiongnu_man", "beard": "mustache", "robeColor": "#7d5134", "hatColor": "#5b3a2a" },
+    "chanyu": { "preset": "xiongnu_chief", "expression": "smile" },
+    "huqi": { "preset": "xiongnu_woman", "expression": "worried" }
+  },
+
+  "music": {
+    "provider": "lyria",
+    "style": "Instrumental score for a Chinese history anime in the style of a Science SARU drama. Traditional Chinese instruments (guzheng, xiao, erhu, pipa) blended with a small string section, pentatonic, cinematic, no vocals, no lyrics, even dynamics so narration can sit on top",
+    "cues": [
+      { "id": "opening", "from": "s01", "to": "s02", "prompt": "Vast starry night over the Mongolian steppe, solo xiao bamboo flute over a soft low drone and sparse guzheng harmonics, mysterious and wondrous, very slow", "mood": "wonder" },
+      { "id": "court", "from": "s03", "to": "s05", "prompt": "Solemn Han dynasty imperial court, bianzhong bronze bells, guqin and low frame drums, majestic but restrained, then a hopeful rising motif as a young envoy volunteers", "mood": "epic" },
+      { "id": "captive", "from": "s06", "to": "s08", "prompt": "Captivity among nomads, low bowed strings and erhu, a slow heartbeat frame drum, tense at first then turning tender and melancholic, years passing", "mood": "sad" },
+      { "id": "escape", "from": "s09", "to": "s10", "prompt": "Night escape on horseback heading west, galloping rhythm on frame drums, pipa tremolo, urgent then opening into a wide adventurous theme over snowy mountains", "mood": "tense" },
+      { "id": "yuezhi", "from": "s11", "to": "s12", "prompt": "Fertile river valley in Central Asia, gentle guzheng and dizi, warm but bittersweet, a mission that cannot be fulfilled, then quiet determination", "mood": "sad" },
+      { "id": "return", "from": "s13", "to": "s15", "prompt": "Homecoming after thirteen years, swelling strings with guzheng and xiao, emotional and bittersweet, building to a grand hopeful finale that resolves softly under a starry sky", "mood": "calm" }
+    ]
+  },
+
+  "scenes": [
+    {
+      "id": "s01",
+      "ambience": "night",
+      "lead": 1.4,
+      "camera": { "from": { "x": 960, "y": 380, "zoom": 1.18 }, "to": { "x": 960, "y": 590, "zoom": 1.06 }, "ease": "inOutSine" },
+      "layers": [
+        { "type": "bg.nightsky", "depth": 1, "params": { "horizon": "steppe", "chart": true, "moon": { "x": 1580, "y": 170, "r": 44 }, "shootingStar": "line:1+1.2" } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "草原的夜里，星空像一顶巨大的帐幕，罩住了整个天下。" },
+        { "speaker": "narrator", "text": "两千多年前，有一个人在这片星空下，被困了十年。" }
+      ]
+    },
+    {
+      "id": "s02",
+      "duration": 5.6,
+      "transition": { "type": "ink", "duration": 1.2 },
+      "subtitles": false,
+      "layers": [
+        { "type": "bg.paper", "params": { "wash": "#8a6a40" } },
+        { "type": "text.title", "params": { "text": "凿空", "sub": "张骞出使西域", "seal": "博望", "at": 0.6, "size": 240, "x": 1000 } }
+      ],
+      "lines": []
+    },
+    {
+      "id": "s03",
+      "caption": "长安 · 未央宫",
+      "transition": { "type": "scroll", "duration": 1.3 },
+      "camera": [
+        { "at": 0, "x": 960, "y": 540, "zoom": 1.0 },
+        { "at": "line:1", "x": 960, "y": 520, "zoom": 1.05 },
+        { "at": "line:2", "x": 960, "y": 420, "zoom": 1.32, "ease": "inOutCubic" }
+      ],
+      "layers": [
+        { "type": "bg.palace", "depth": 1 },
+        { "type": "character", "x": 960, "y": 700, "scale": 0.95, "params": { "character": "wudi" } },
+        { "type": "prop.table", "x": 960, "y": 650, "scale": 1.0 },
+        { "type": "crowd", "x": 120, "y": 1010, "params": { "kind": "kneel", "count": 4, "spacing": 130, "size": 1.7, "rows": 2, "rowGap": 60, "rowShift": -40 } },
+        { "type": "crowd", "x": 1410, "y": 1010, "params": { "kind": "kneel", "count": 4, "spacing": 130, "size": 1.7, "rows": 2, "rowGap": 60, "rowShift": 40, "seed": 2 } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "汉武帝即位之初，从投降的匈奴人口中听到一个消息。" },
+        { "speaker": "narrator", "text": "匈奴打败了月氏，杀了月氏王，把他的头骨做成酒器。月氏人被迫西迁，对匈奴恨之入骨。" },
+        { "speaker": "wudi", "text": "若能联络月氏，东西夹击，匈奴可破。谁愿替朕走这一趟？", "expression": "determined" }
+      ]
+    },
+    {
+      "id": "s04",
+      "transition": { "type": "iris", "duration": 0.9 },
+      "camera": { "from": { "x": 960, "y": 560, "zoom": 1.04 }, "to": { "x": 960, "y": 540, "zoom": 1.0 } },
+      "layers": [
+        { "type": "bg.pattern", "params": { "color": "#2f4a6d", "motif": "cloud", "motifColor": "rgba(240,230,210,0.10)", "step": 260 } },
+        { "type": "character", "id": "zq", "x": 960, "y": 1110, "scale": 1.5, "params": { "character": "zhangqian", "pose": "gongshou" },
+          "moves": [{ "at": "line:2", "x": 640, "duration": 1.0, "ease": "inOutCubic" }] },
+        { "type": "character", "x": 1330, "y": 1110, "scale": 1.45, "params": { "character": "ganfu", "look": [-0.5, 0], "expression": "neutral" },
+          "enter": { "type": "slide-left", "at": "line:2+0.3", "duration": 0.9, "distance": 500 } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "站出来的，是一个名叫张骞的年轻郎官。" },
+        { "speaker": "zhangqian", "text": "臣张骞，愿往。", "expression": "determined" },
+        { "speaker": "narrator", "text": "与他同行的，还有一个名叫甘父的匈奴人，擅长骑射。", "reactions": { "zhangqian": "smile" } }
+      ]
+    },
+    {
+      "id": "s05",
+      "transition": { "type": "dip", "duration": 1.0 },
+      "camera": [
+        { "at": 0, "x": 1480, "y": 560, "zoom": 1.7 },
+        { "at": "line:1", "x": 1380, "y": 500, "zoom": 1.55, "ease": "inOutSine" },
+        { "at": "line:2+1", "x": 1300, "y": 400, "zoom": 1.45, "ease": "inOutSine" }
+      ],
+      "layers": [
+        { "type": "map.ancient", "depth": 1, "params": {
+          "show": ["changan", "longxi", "wuwei", "dunhuang", "xiongnu", "yumen"],
+          "routes": [
+            { "points": ["changan", "longxi", [1400, 590], "wuwei"], "start": "line:0+0.5", "duration": 4.5 },
+            { "points": ["wuwei", [1320, 380], "xiongnu"], "start": "line:2+0.6", "duration": 2.5, "color": "#5b2f2a", "dashed": true, "icon": "囚" }
+          ],
+          "markers": [{ "place": "wuwei", "text": "俘", "at": "line:2+0.2", "dx": 50, "dy": -60 }]
+        } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "约公元前一三八年，一百多人的使团从长安出发，经陇西向西。" },
+        { "speaker": "narrator", "text": "可要去月氏，必须穿过匈奴控制的河西走廊。" },
+        { "speaker": "narrator", "text": "他们很快被匈奴骑兵截获，押送到了单于的王庭。" }
+      ]
+    },
+    {
+      "id": "s06",
+      "caption": "匈奴 · 单于庭",
+      "ambience": "fire",
+      "transition": { "type": "ink", "duration": 1.0 },
+      "camera": [
+        { "at": 0, "x": 960, "y": 540, "zoom": 1.02 },
+        { "at": "line:0", "x": 1180, "y": 500, "zoom": 1.15, "ease": "inOutCubic" },
+        { "at": "line:2", "x": 900, "y": 540, "zoom": 1.05, "ease": "inOutSine" }
+      ],
+      "layers": [
+        { "type": "bg.yurt_interior", "depth": 0.8 },
+        { "type": "prop.jie", "x": 420, "y": 1340, "scale": 1.4, "rotate": 4 },
+        { "type": "character", "x": 590, "y": 1110, "scale": 1.42, "params": { "character": "zhangqian", "pose": "hold", "look": [0.6, 0], "expression": "serious" } },
+        { "type": "character", "x": 1340, "y": 1120, "scale": 1.6, "params": { "character": "chanyu", "look": [-0.6, 0.05] } },
+        { "type": "prop.fire", "x": 960, "y": 1060, "scale": 0.9 },
+        { "type": "fx.embers", "params": { "count": 30 } }
+      ],
+      "lines": [
+        { "speaker": "chanyu", "text": "月氏在我的北边，汉朝凭什么派使者过去？", "expression": "smile" },
+        { "speaker": "chanyu", "text": "我若派人穿过汉地去南越，汉朝肯放行吗？", "expression": "smile" },
+        { "speaker": "narrator", "text": "单于扣下了张骞。这一扣，就是十年。", "reactions": { "chanyu": "neutral" } }
+      ]
+    },
+    {
+      "id": "s07",
+      "caption": "匈奴 · 十年",
+      "ambience": "wind",
+      "transition": { "type": "dip", "duration": 1.0 },
+      "camera": { "from": { "x": 800, "y": 560, "zoom": 1.12 }, "to": { "x": 1120, "y": 540, "zoom": 1.12 } },
+      "layers": [
+        { "type": "bg.steppe", "depth": 1, "params": { "time": "night", "horses": [] } },
+        { "type": "fx.snow", "params": { "count": 110, "wind": 50 } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "匈奴人为他娶了妻子，他也有了孩子。" },
+        { "speaker": "narrator", "text": "草原上的冬夏换了一轮又一轮，日子仿佛就要这样过下去。" }
+      ]
+    },
+    {
+      "id": "s08",
+      "ambience": "fire",
+      "transition": { "type": "fade", "duration": 1.0 },
+      "camera": [
+        { "at": 0, "x": 960, "y": 540, "zoom": 1.04 },
+        { "at": "line:0-0.3", "x": 1180, "y": 520, "zoom": 1.16, "ease": "inOutCubic" },
+        { "at": "line:1-0.3", "x": 760, "y": 520, "zoom": 1.2, "ease": "inOutCubic" },
+        { "at": "line:2", "x": 560, "y": 470, "zoom": 1.4, "ease": "inOutSine" }
+      ],
+      "layers": [
+        { "type": "bg.yurt_interior", "depth": 0.8, "params": { "tapestries": [[180, 240], [1500, 240]] } },
+        { "type": "prop.jie", "x": 395, "y": 1330, "scale": 1.4, "rotate": 3 },
+        { "type": "character", "x": 590, "y": 1110, "scale": 1.45, "params": { "character": "zhangqian", "pose": "hold", "look": [0.5, 0.1], "expression": "sad", "beard": "mustache" } },
+        { "type": "character", "x": 1340, "y": 1110, "scale": 1.45, "params": { "character": "huqi", "look": [-0.55, 0.05] } },
+        { "type": "prop.fire", "x": 980, "y": 1080, "scale": 0.75 }
+      ],
+      "lines": [
+        { "speaker": "huqi", "text": "你还是要走，对吗？", "expression": "worried" },
+        { "speaker": "zhangqian", "text": "……我答应过陛下。", "expression": "sad", "reactions": { "huqi": "sad" } },
+        { "speaker": "narrator", "text": "史书只留下一句话：骞持汉节不失。", "reactions": { "huqi": "sad", "zhangqian": "determined" } }
+      ]
+    },
+    {
+      "id": "s09",
+      "ambience": "wind",
+      "transition": { "type": "wipe", "duration": 0.8 },
+      "cameraShake": 3,
+      "camera": { "from": { "x": 960, "y": 560, "zoom": 1.06 }, "to": { "x": 900, "y": 540, "zoom": 1.06 } },
+      "layers": [
+        { "type": "bg.desert", "depth": 0.5, "params": { "time": "night" } },
+        { "type": "prop.rider", "x": 2300, "y": 980, "scale": 1.1, "flip": true, "params": { "kind": "han", "jie": true, "gait": "gallop", "speed": 1.2 },
+          "moves": [{ "at": 0, "x": -500, "until": "end", "ease": "linear" }] },
+        { "type": "prop.rider", "x": 2750, "y": 1010, "scale": 1.15, "flip": true, "params": { "kind": "nomad", "gait": "gallop", "speed": 1.25, "horseColor": "#5a3a26" },
+          "moves": [{ "at": 0, "x": -150, "until": "end", "ease": "linear" }] },
+        { "type": "fx.sand", "params": { "color": "#6a6f96", "haze": 0.12, "count": 90 } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "看守渐渐松懈。一天夜里，张骞带着部下逃出匈奴，一路向西。" },
+        { "speaker": "ganfu", "text": "大人，跟紧我！往西走！" }
+      ]
+    },
+    {
+      "id": "s10",
+      "ambience": "wind",
+      "transition": { "type": "dip", "duration": 0.9 },
+      "camera": { "from": { "x": 1100, "y": 520, "zoom": 1.1 }, "to": { "x": 860, "y": 560, "zoom": 1.1 } },
+      "layers": [
+        { "type": "bg.mountains", "depth": 1 },
+        { "type": "prop.caravan", "x": 1500, "y": 800, "scale": 0.55, "flip": true, "params": { "kind": "horse", "count": 3, "gait": "walk", "spacing": 340, "colors": ["#33476a", "#8e5a35", "#5b4a3a"] },
+          "moves": [{ "at": 0, "x": 760, "until": "end", "ease": "linear" }] },
+        { "type": "fx.snow", "params": { "count": 60, "wind": 120, "speed": 50 } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "他们向西跋涉了几十天，翻越雪山，来到大宛。" },
+        { "speaker": "narrator", "text": "大宛王早就听说汉朝富庶，派人做向导，把他们送到康居，再转送到大月氏。" }
+      ]
+    },
+    {
+      "id": "s11",
+      "caption": "妫水 · 大月氏",
+      "transition": { "type": "scroll", "duration": 1.2 },
+      "camera": { "from": { "x": 960, "y": 540, "zoom": 1.0 }, "to": { "x": 1150, "y": 520, "zoom": 1.12 } },
+      "layers": [
+        { "type": "bg.river_land", "depth": 0.7 },
+        { "type": "character", "x": 1360, "y": 1110, "scale": 1.4, "params": { "character": "zhangqian", "look": [-0.7, 0.15], "beard": "mustache", "expression": "neutral" },
+          "enter": { "type": "rise", "at": 0.6, "duration": 1.0 } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "可此时的大月氏，已在妫水边的沃土上安顿下来，还征服了大夏。", "reactions": { "zhangqian": "worried" } },
+        { "speaker": "narrator", "text": "土地肥沃，少有外敌，他们早已无心向匈奴复仇。", "reactions": { "zhangqian": "sad" } },
+        { "speaker": "narrator", "text": "张骞在那里停留了一年多，终究没能说动月氏。", "reactions": { "zhangqian": "closed" } }
+      ]
+    },
+    {
+      "id": "s12",
+      "transition": { "type": "dip", "duration": 1.0 },
+      "camera": [
+        { "at": 0, "x": 640, "y": 560, "zoom": 1.45 },
+        { "at": "line:1", "x": 1000, "y": 520, "zoom": 1.2, "ease": "inOutSine" }
+      ],
+      "layers": [
+        { "type": "map.ancient", "depth": 1, "params": {
+          "routes": [
+            { "points": ["changan", "longxi", [1400, 590], "wuwei", [1320, 380], "xiongnu"], "start": -10, "duration": 0.1, "color": "#9a6a52", "width": 5, "keepMarker": false },
+            { "points": ["xiongnu", [1000, 300], [700, 330], "dayuan", "kangju", "yuezhi", "daxia"], "start": -10, "duration": 0.1, "color": "#9a6a52", "width": 5, "keepMarker": false },
+            { "points": ["daxia", [500, 700], [800, 720], "qiang"], "start": "line:0+0.3", "duration": 3.8 },
+            { "points": ["qiang", [1350, 660], "changan"], "start": "line:1+1.4", "duration": 3.0, "color": "#d6a84a" }
+          ],
+          "markers": [{ "place": "qiang", "text": "俘", "at": "line:0+4.2", "dx": 40, "dy": -50 }]
+        } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "归途中，他想沿着南山，经羌人的地界回国，却又一次落入匈奴之手。" },
+        { "speaker": "narrator", "text": "一年多后，单于去世，匈奴内乱。张骞带着妻子和甘父，趁乱逃了出来。" }
+      ]
+    },
+    {
+      "id": "s13",
+      "caption": "公元前一二六年 · 长安",
+      "transition": { "type": "ink", "duration": 1.2 },
+      "camera": { "from": { "x": 960, "y": 620, "zoom": 1.0 }, "to": { "x": 960, "y": 560, "zoom": 1.22 }, "ease": "inOutSine" },
+      "layers": [
+        { "type": "bg.citygate", "depth": 1, "params": { "time": "dusk" } },
+        { "type": "figure", "x": 900, "y": 1060, "scale": 1.4, "params": { "kind": "han", "color": "#4a5a78" }, "moves": [{ "at": 0, "y": 900, "scale": 1.0, "until": "end" }] },
+        { "type": "prop.jie", "x": 940, "y": 1070, "scale": 0.38, "moves": [{ "at": 0, "x": 927, "y": 910, "scale": 0.27, "until": "end" }] },
+        { "type": "figure", "x": 1010, "y": 1070, "scale": 1.4, "params": { "kind": "nomad", "color": "#7d5134" }, "moves": [{ "at": 0, "y": 905, "scale": 1.0, "until": "end" }] }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "公元前一二六年，张骞终于回到长安。" },
+        { "speaker": "narrator", "text": "出发时一百多人，十三年后，回来的只有两个人。" }
+      ]
+    },
+    {
+      "id": "s14",
+      "transition": { "type": "dip", "duration": 1.0 },
+      "camera": { "from": { "x": 960, "y": 540, "zoom": 1.0 }, "to": { "x": 900, "y": 500, "zoom": 1.08 } },
+      "layers": [
+        { "type": "map.ancient", "depth": 1, "params": {
+          "routes": [
+            { "points": ["changan", "longxi", "wuwei", "dunhuang", "loulan", "qiuci", "shule", "dayuan", "kangju"], "start": "line:0+0.5", "duration": 5, "color": "#d6a84a", "width": 9, "icon": "汉" },
+            { "points": ["dunhuang", [1000, 600], "yutian", [560, 640], "pamir", "yuezhi", "daxia"], "start": "line:1", "duration": 4.5, "color": "#d6a84a", "width": 9, "icon": "汉" }
+          ]
+        } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "联络月氏的使命失败了。可他带回了西域诸国的山川、物产和道路。" },
+        { "speaker": "narrator", "text": "从此，一条连接东方与西方的大道，被打通了。" }
+      ]
+    },
+    {
+      "id": "s15",
+      "ambience": "night",
+      "transition": { "type": "ink", "duration": 1.4 },
+      "tail": 3.5,
+      "fadeOut": 2.0,
+      "subtitles": true,
+      "camera": { "from": { "x": 960, "y": 600, "zoom": 1.06 }, "to": { "x": 960, "y": 420, "zoom": 1.14 } },
+      "layers": [
+        { "type": "bg.nightsky", "depth": 1, "params": { "horizon": "steppe", "dipperX": 1180, "dipperY": 160 } },
+        { "type": "text.quote", "x": 560, "y": 260, "params": { "text": "然张骞凿空", "source": "史记·大宛列传", "color": "#f4ecd8", "size": 86, "at": "line:1-0.4", "perChar": 0.16 } }
+      ],
+      "lines": [
+        { "speaker": "narrator", "text": "后来，司马迁在《史记》里，用两个字形容他做的事——" },
+        { "speaker": "narrator", "text": "凿空。", "gap": 0.8 }
+      ]
+    }
+  ]
+}

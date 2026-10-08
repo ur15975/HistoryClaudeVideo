@@ -1,0 +1,188 @@
+:root {
+  --font-sub: 'LXGW WenKai', 'WenQuanYi Zen Hei', serif;
+  --font-title: 'Ma Shan Zheng', 'LXGW WenKai', serif;
+  --font-brush: 'Ma Shan Zheng', 'LXGW WenKai', serif;
+  --paper: #efe6d2;
+  --ink: #2e2520;
+  --vermilion: #c2452d;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  overflow: hidden;
+}
+
+#stage {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--paper);
+  transform-origin: 0 0;
+  font-family: var(--font-sub);
+}
+
+.scenes, .scene, .dip, .paper, .grain, .vignette {
+  position: absolute;
+  inset: 0;
+}
+
+.scene-svg {
+  display: block;
+  width: 1920px;
+  height: 1080px;
+}
+
+.scene {
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.dip { pointer-events: none; opacity: 0; z-index: 5; }
+
+.paper {
+  z-index: 6;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.42;
+  background-size: 1920px 1080px;
+}
+
+.grain {
+  z-index: 7;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.07;
+  background-size: 512px 512px;
+}
+
+.vignette {
+  z-index: 8;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 48%, rgba(0, 0, 0, 0) 58%, rgba(38, 22, 12, 0.32) 100%);
+}
+
+.scroll-rod {
+  position: absolute;
+  top: -10px;
+  left: -16px;
+  width: 32px;
+  height: 1100px;
+  z-index: 9;
+  display: none;
+  background: linear-gradient(90deg, #3e2618, #8a5a36 35%, #b98352 50%, #7a4c2c 70%, #3a2214);
+  box-shadow: 0 0 24px rgba(30, 15, 5, 0.55);
+  border-left: 2px solid #2a170c;
+  border-right: 2px solid #2a170c;
+}
+
+.subtitle {
+  position: absolute;
+  left: 160px;
+  right: 160px;
+  bottom: 64px;
+  z-index: 20;
+  text-align: center;
+  opacity: 0;
+  line-height: 1.45;
+}
+
+.subtitle .text {
+  font-family: var(--font-sub);
+  font-weight: 700;
+  font-size: 50px;
+  letter-spacing: 0.04em;
+  color: #fbf6ea;
+  text-shadow:
+    -2px -2px 0 #2b1f19, 2px -2px 0 #2b1f19, -2px 2px 0 #2b1f19, 2px 2px 0 #2b1f19,
+    0 -3px 0 #2b1f19, 0 3px 0 #2b1f19, -3px 0 0 #2b1f19, 3px 0 0 #2b1f19,
+    0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+.subtitle .text.dialogue { color: #fff3d6; }
+
+.subtitle .speaker {
+  display: inline-block;
+  vertical-align: 6px;
+  margin-right: 18px;
+  padding: 2px 16px 4px;
+  font-family: var(--font-sub);
+  font-weight: 700;
+  font-size: 32px;
+  color: #fbf6ea;
+  border-radius: 4px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+}
+
+.caption {
+  position: absolute;
+  top: 72px;
+  left: 84px;
+  z-index: 19;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 10px;
+  opacity: 0;
+}
+
+.caption span {
+  writing-mode: vertical-rl;
+  font-family: var(--font-sub);
+  font-weight: 700;
+  font-size: 38px;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+  background: rgba(244, 236, 218, 0.92);
+  padding: 22px 12px;
+  border: 2px solid rgba(46, 37, 32, 0.75);
+  box-shadow: 4px 6px 0 rgba(46, 37, 32, 0.18);
+}
+
+.caption span:first-child {
+  border-color: var(--vermilion);
+  color: var(--vermilion);
+}
+
+.font-probe {
+  position: absolute;
+  left: -99999px;
+  top: 0;
+  width: 4000px;
+  visibility: hidden;
+}
+
+/* 交互预览 */
+body.interactive {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#controls {
+  display: none;
+}
+
+body.interactive #controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #1b1714;
+  color: #eadfc8;
+  font: 14px/1.4 var(--font-sub);
+}
+
+body.interactive #controls input[type='range'] { flex: 1; }
+body.interactive #controls button {
+  background: #c2452d;
+  color: #fff;
+  border: 0;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
