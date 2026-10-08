@@ -34,9 +34,13 @@ export const config = {
     apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
     baseUrl: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
     // 主模型 + 后备模型（逗号分隔）。主模型当天配额用尽时依次换用后备模型
-    ttsModels: (process.env.HCV_TTS_MODELS || 'gemini-3.8-flash-tts,gemini-3.1-flash-tts-preview,gemini-2.5-flash-preview-tts,gemini-2.5-pro-preview-tts').split(',').map((s) => s.trim()),
+    // 默认只用 Gemini 3.8 系列，保证整集音色一致；需要更多后备可加 gemini-3.1-flash-tts-preview 等
+    ttsModels: (process.env.HCV_TTS_MODELS || 'gemini-3.8-flash-tts,gemini-3.8-flash-lite-tts').split(',').map((s) => s.trim()),
     musicModels: (process.env.HCV_MUSIC_MODELS || 'lyria-3-pro-preview').split(',').map((s) => s.trim()),
-    checkModels: (process.env.HCV_CHECK_MODELS || 'gemini-3.5-flash,gemini-3.8-flash,gemini-3-flash-preview').split(',').map((s) => s.trim()),
+    // 听音乐做质检（是否有人声）用通用多模态模型
+    listenModels: (process.env.HCV_LISTEN_MODELS || 'gemini-3.8-flash,gemini-3.5-flash').split(',').map((s) => s.trim()),
+    // 配音校对用的听写模型：专用听写模型逐字转写，不会省略“用……的语气说”这类话
+    checkModels: (process.env.HCV_CHECK_MODELS || 'gemini-3.5-transcribe,gemini-3.8-flash').split(',').map((s) => s.trim()),
     ttsConcurrency: Number(process.env.HCV_TTS_CONCURRENCY || 4),
     // 每个模型每分钟最多请求数（免费档为 10；付费档可调高，设为 0 关闭限速）
     rpm: Number(process.env.HCV_GEMINI_RPM ?? 10),

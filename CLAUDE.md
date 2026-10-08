@@ -8,7 +8,9 @@
 2. **查史料**：确认年代、人物、地名、官职、服饰。台词里引用原文要准确。
 3. **写剧本** `episodes/<id>/episode.json`：8～16 个场景，旁白为主；给每个角色设计外观（`characters`）和音色（`cast`）；`music.cues` 覆盖所有场景。
 4. **先看画面再配音**：`npm run still -- <id> --no-tts --rebuild` 每个场景出一张图到 `build/<id>/stills/`，用 Read 工具逐张检查构图、遮挡、文字溢出、穿帮（例如汉人角色被 `flip` 成左衽）。需要看某个场景的多个时刻：`--scene s05`；指定时间：`--t 12.5,30`。
-5. **出片**：`npm run build -- <id>`。配音会逐句自动校对（Gemini 听写比对），不合格自动重录。只重渲染一部分：`--from s05 --to s07`。
+5. **出片**：`npm run build -- <id>`。配音会逐句自动校对（`gemini-3.5-transcribe` 听写比对），不合格自动重录。只重渲染一部分：`--from s05 --to s07`。
+   - 不要把中文语气提示和台词拼在一起送 TTS（Gemini 3.8 会念出来）；角色气质靠 `voice` 选择，必要时用 `direct: true`。
+   - 校对必须用专用听写模型：通用对话模型会自动省略“用……的语气说”这类话，造成漏判。
 6. 有读错的句子：给台词加 `say`（同音字改写）或把 `take` 加 1，再 build；查看汇总：`npm run check -- <id>`。
 
 现有组件画不出来的东西，在 `episodes/<id>/components.js` 里写自定义组件（见 `docs/episode-format.md` 末尾），或在剧本里用 `svg.raw` 直接写 SVG。通用的新组件加到 `engine/lib/` 对应文件并补文档。

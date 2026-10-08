@@ -2,7 +2,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { log } from '../util/log.js';
-import { synthesizeEpisode } from './tts.js';
+import { synthesizeEpisode, buildPrompt } from './tts.js';
+import { judge } from './verify.js';
+import { applyPronunciations } from './pronounce.js';
 
 export async function checkEpisode(episode, voiceDir) {
   const voices = await synthesizeEpisode(episode, voiceDir, { verify: true });
@@ -12,7 +14,13 @@ export async function checkEpisode(episode, voiceDir) {
       const id = `${scene.id}#${i}`;
       const v = voices.get(id);
       const meta = v.cacheFile.replace(/\.wav$/, '.check.json');
-      const c = fs.existsSync(meta) ? JSON.parse(fs.readFileSync(meta, 'utf8')) : { ok: true, score: 1, heard: '' };
+      let c = fs.existsSync(meta) ? JSON.parse(fs.readFileSync(meta, 'utf8')) : { ok: true, score: 1, heard: '' };
+      if (c.heard) {
+        const spoken = applyPronunciations(line.say || line.text, episode.pronunciations);
+        const role = episode.cast[line.speaker] || {};
+        const direction = buildPrompt(line, episode.cast, episode.pronunciations) !== spoken ? [role.style, line.tone].filter(Boolean).join('，') : '';
+        c = { ...c, ...judge(c.heard, line.text, spoken, direction) };
+      }
       rows.push({ id, text: line.text, ...c, duration: v.duration, tempo: v.tempo });
       const mark = c.ok ? '\x1b[32m✔\x1b[0m' : '\x1b[31m✖\x1b[0m';
       console.log(`${mark} ${id.padEnd(6)} ${v.duration.toFixed(1).padStart(5)}s ${line.text}${c.ok ? '' : `\n     听到：${c.heard}\n     问题：${c.issue}`}`);

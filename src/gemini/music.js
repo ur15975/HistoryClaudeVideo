@@ -99,7 +99,7 @@ async function checkMusic(file) {
   const meta = file.replace(/\.mp3$/, '.check.json');
   if (fs.existsSync(meta)) return JSON.parse(fs.readFileSync(meta, 'utf8'));
   try {
-    const { json } = await generateWithFallback(config.gemini.checkModels, {
+    const { json } = await generateWithFallback(config.gemini.listenModels, {
       contents: [{ parts: [
         { inlineData: { mimeType: 'audio/mpeg', data: fs.readFileSync(file).toString('base64') } },
         { text: '听这段音乐，只输出 JSON：{"vocals": 是否出现任何人声（歌唱、合唱、哼唱、吟唱、念白）, "description": "一句话描述乐器和情绪"}' },

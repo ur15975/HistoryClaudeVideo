@@ -10,7 +10,7 @@
 |---|---|
 | `id` `title` `subtitle` | 剧集标识、片名、副标题 |
 | `sources` | 参考史料（字符串数组），只做记录 |
-| `cast` | 说话人 → `{ name, voice, style, color }`。`narrator` 必须有。`voice` 是 Gemini 音色名（`npm run voices` 查看），`style` 是语气描述，`color` 是字幕名牌颜色 |
+| `cast` | 说话人 → `{ name, voice, style, color, direct, speed }`。`narrator` 必须有。`voice` 是 Gemini 音色名（`node src/cli.js voices` 查看）；`style` 是语气设定（默认不送进 TTS，见风格指南）；`direct: true` 时以英文导演备注的形式送进 TTS；`speed` 语速倍率；`color` 是字幕名牌颜色 |
 | `characters` | 角色外观 → `{ preset, ...外观参数 }`，见“角色” |
 | `pronunciations` | 额外的读音替换表 `{ "原词": "同音字" }`，只影响配音 |
 | `music` | `{ provider, style, cues }`，见“配乐” |
@@ -68,7 +68,8 @@
 | `speaker` | `cast` 中的 id |
 | `text` | 字幕与配音文字 |
 | `say` | 可选，仅用于配音的改写（纠正读音） |
-| `tone` | 可选，本句额外语气，如“压低声音” |
+| `tone` | 可选，本句额外语气，如“压低声音”（仅在 `direct` 开启时送进 TTS） |
+| `direct` | 本句单独开启导演备注 |
 | `expression` | 说这句时说话人的表情 |
 | `reactions` | 这句期间其他角色的表情 `{ 角色id: 表情 }` |
 | `gap` / `delay` | 与上一句的间隔 / 额外延迟（秒） |

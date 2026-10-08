@@ -6,7 +6,7 @@ import { config, ensureDir } from '../config.js';
 import { log, pool } from '../util/log.js';
 import { readWav, pcm16ToChannels, toMono, trimSilence, compressPauses, envelope, writeWav } from '../util/wav.js';
 import { run } from '../util/ffmpeg.js';
-import { verifyClip } from './verify.js';
+import { verifyClip, judge } from './verify.js';
 import { generateContent, firstInlineData, GeminiError, QuotaExhaustedError, isExhausted } from './client.js';
 import { applyPronunciations } from './pronounce.js';
 
@@ -20,12 +20,15 @@ export const VOICES = {
   Zubenelgenubi: '随意', Vindemiatrix: '温柔', Sadachbia: '活泼', Sadaltager: '博学', Sulafat: '温暖',
 };
 
-// 组合导演提示 + 台词。提示语不会被朗读出来（已用转写校验过）。
+// 送进 TTS 的文本。实测 Gemini 3.8 TTS 会把中文语气提示（“用……的语气说：”）原样念出来，
+// 所以默认只送台词，角色气质靠音色区分；某个角色确实需要特别语气时，在 cast 里设 direct: true，
+// 改用英文导演备注（仍有少量误读，由逐句校对兜底重录）。
 export function buildPrompt(line, cast, pronunciations) {
   const role = cast[line.speaker] || cast.narrator || {};
-  const direction = [role.style, line.tone].filter(Boolean).join('，');
   const spoken = applyPronunciations(line.say || line.text, pronunciations);
-  return direction ? `用${direction}的语气说：${spoken}` : spoken;
+  const direction = [role.style, line.tone].filter(Boolean).join('，');
+  if ((role.direct || line.direct) && direction) return `[Voice direction, do not read aloud: ${direction}]\n${spoken}`;
+  return spoken;
 }
 
 // take：同一句想换一个“版本”时递增（TTS 每次生成略有不同）
@@ -136,11 +139,15 @@ export async function synthesizeEpisode(episode, outDir, { force = false, verify
       if (take.fresh) fresh++;
       if (!verify) { chosen = take; break; }
       const metaFile = take.raw.replace(/\.wav$/, '.check.json');
+      const direction = prompt !== spoken ? [role.style, line.tone].filter(Boolean).join('，') : '';
       let check = !take.fresh && fs.existsSync(metaFile) ? JSON.parse(fs.readFileSync(metaFile, 'utf8')) : null;
+      // 早期版本的校对用通用模型听写，结果不可靠，重校；可靠的听写原文每次重新判定
+      if (check && !(check.v >= 2)) check = null;
+      if (check) check = { ...check, ...judge(check.heard, line.text, spoken, direction) };
       const cachedCheck = !!check;
       if (!check) {
         try {
-          check = await verifyClip(take.raw, line.text, spoken);
+          check = await verifyClip(take.raw, line.text, spoken, direction);
           fs.writeFileSync(metaFile, JSON.stringify(check));
         } catch (err) {
           // 校对服务不可用时不阻塞出片，也不写缓存，下次再校

@@ -23,25 +23,26 @@ export async function mixEpisode(timeline, cuesWithFiles, outDir, opts = {}) {
   const music = [new Float32Array(n), new Float32Array(n)];
   const amb = [new Float32Array(n), new Float32Array(n)];
 
-  // 1. 台词
+  // 1. 台词：逐句归一到约 -19 dBFS（只计有声部分），轻声的角色也不会被音乐埋掉
   for (const scene of timeline.scenes) {
     for (const line of scene.lines) {
       if (!line.audio) continue;
       const wav = readWav(line.audio);
       const mono = resample(toMono(wav.channels), wav.sampleRate, SR);
-      const gain = line.volume ?? 1;
+      let sum = 0;
+      let cnt = 0;
+      for (let i = 0; i < mono.length; i += 4) if (Math.abs(mono[i]) > 0.01) { sum += mono[i] ** 2; cnt++; }
+      const r = Math.sqrt(sum / Math.max(1, cnt));
+      const gain = (r > 0 ? Math.min(4, 0.112 / r) : 1) * (line.volume ?? 1);
       const at = Math.floor(line.start * SR);
       for (let i = 0; i < mono.length && at + i < n; i++) voice[at + i] += mono[i] * gain;
     }
   }
-  // 旁白整体归一到约 -19 dBFS（仅计算有声部分）
+  // 防止个别句子归一后削波
   {
-    let s = 0;
-    let c = 0;
-    for (let i = 0; i < n; i += 4) if (Math.abs(voice[i]) > 0.01) { s += voice[i] ** 2; c++; }
-    const r = Math.sqrt(s / Math.max(1, c));
-    const g = r > 0 ? Math.min(4, 0.112 / r) : 1;
-    for (let i = 0; i < n; i++) voice[i] *= g;
+    let peak = 0;
+    for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(voice[i]));
+    if (peak > 0.95) for (let i = 0; i < n; i++) voice[i] *= 0.95 / peak;
   }
 
   // 2. 背景音乐（每段归一化后交叉淡化）
