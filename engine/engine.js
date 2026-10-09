@@ -7,6 +7,8 @@ import './lib/props.js';
 import './lib/effects.js';
 import './lib/maps.js';
 import './lib/text.js';
+import './lib/cuju.js';
+import './lib/palace.js';
 
 // ───────────────────────── 时间表达式 ─────────────────────────
 // 数字（场景内秒数）、"line:2"、"line:2:end"、"end-1.5"、"line:0+0.8"

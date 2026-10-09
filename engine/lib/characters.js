@@ -45,7 +45,7 @@ export const PRESETS = {
   },
 };
 
-function resolveDef(id, ctx, params) {
+export function resolveDef(id, ctx, params) {
   const base = (id && ctx.character(id)) || {};
   const preset = PRESETS[params.preset || base.preset || 'han_official'] || PRESETS.han_official;
   return { ...preset, ...base, ...params };
@@ -511,7 +511,9 @@ function arms(def, pose, full) {
 }
 
 // ───────────────────────── 组件 ─────────────────────────
-register('character', (params, ctx) => {
+// 构建一个角色（也供其他组件复用，例如蹴鞠球员在半身像下面接上自己的下半身）。
+// 返回 { el, update(t), def, parts }，parts 里是可单独变换的分组。
+export function buildCharacter(params, ctx) {
   const id = params.character || params.id;
   const def = resolveDef(id, ctx, params);
   const full = !!def.full;
@@ -550,6 +552,8 @@ register('character', (params, ctx) => {
 
   return {
     el: root,
+    def,
+    parts: { root, body, head, backHair, neck: neckG, features },
     update(t) {
       const tt = onTwos(t);
       const expr = exprAt(t);
@@ -606,7 +610,9 @@ register('character', (params, ctx) => {
       }
     },
   };
-});
+}
+
+register('character', (params, ctx) => buildCharacter(params, ctx));
 
 // 远景小人（群像、行进队伍用的简化全身人物）
 export function drawFigure(params) {
