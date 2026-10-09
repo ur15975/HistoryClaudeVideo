@@ -55,6 +55,9 @@ class SceneRuntime {
       scene,
       timeline: tl,
       episode: tl.episode,
+      // 画面文字的语言；拉丁文字（英文等）时组件改用横排与西文字体
+      lang: tl.episode.lang || 'zh',
+      latin: !/^(zh|ja)/.test(tl.episode.lang || 'zh'),
       fps: tl.fps,
       defs: this.defs,
       duration: this.duration,
@@ -288,6 +291,10 @@ export class Player {
     this.paperEl = html('div', { class: 'paper' });
     this.vignetteEl = html('div', { class: 'vignette' });
     this.stage.append(this.layersEl, this.dipEl, this.rodEl, this.paperEl, this.grainEl, this.vignetteEl, this.capEl, this.subEl);
+    const lang = timeline.episode.lang || 'zh';
+    this.stage.classList.add(`lang-${lang}`);
+    if (!/^(zh|ja)/.test(lang)) this.stage.classList.add('latin');
+    document.documentElement.lang = lang;
     makeTextures(this);
     await this.preloadFonts();
   }
@@ -303,9 +310,10 @@ export class Player {
     for (const c of Object.values(this.timeline.episode.cast || {})) texts.push(c.name || '');
     const all = texts.join('') + (this.timeline.episode.title || '') + (this.timeline.episode.subtitle || '');
     const probe = html('div', { class: 'font-probe' });
-    for (const fam of ['var(--font-sub)', 'var(--font-title)', 'var(--font-brush)']) {
+    for (const fam of ['var(--font-sub)', 'var(--font-title)', 'var(--font-brush)', 'var(--font-latin)', 'var(--font-latin-title)']) {
       probe.appendChild(html('span', { style: { fontFamily: fam }, text: all }));
       probe.appendChild(html('b', { style: { fontFamily: fam }, text: all }));
+      probe.appendChild(html('i', { style: { fontFamily: fam, fontWeight: 500 }, text: all }));
     }
     document.body.appendChild(probe);
     await document.fonts.ready;

@@ -6,7 +6,7 @@ import { config, ensureDir, ROOT } from './config.js';
 import { log } from './util/log.js';
 import { hasBinary } from './util/ffmpeg.js';
 import { loadEpisode } from './episode.js';
-import { buildTimeline, toSrt } from './pipeline/timeline.js';
+import { buildTimeline, toSrt, episodeSection } from './pipeline/timeline.js';
 
 const HELP = `
 天幕 · 中国历史动画生成器
@@ -21,6 +21,7 @@ const HELP = `
   preview <剧集>       启动本地预览服务器，在浏览器里拖动时间轴查看
   check <剧集>         用 Gemini 转写配音，检查是否读错字
   write "<主题>"       调用 Claude 根据主题写一集新剧本
+  translate <剧集> --lang en   调用 Claude 为剧集写某种语言的覆盖层（台词、字幕、画面文字）
   voices               列出可用的 Gemini 音色
 
 常用选项：
@@ -33,6 +34,7 @@ const HELP = `
   --to <场景id>        只渲染到该场景为止
   --workers <n>        并行渲染进程数（默认 ${config.workers}）
   --scale <0.5>        渲染缩放（草稿用 0.5 更快）
+  --lang <en>          语言版本：叠加 episodes/<剧集>/episode.<lang>.json，输出到 build/<剧集>-<lang>/
   --t <1,5.5,10>       still 命令：指定时间点（秒）
   --id <slug>          write 命令：新剧集的目录名
   --minutes <n>        write 命令：目标时长（分钟）
@@ -53,6 +55,8 @@ function parseArgs(argv) {
   return out;
 }
 
+const load = (opts) => loadEpisode(opts._[1], { lang: typeof opts.lang === 'string' ? opts.lang : undefined });
+
 function buildDir(episode) {
   return ensureDir(path.join(config.dirs.build, episode.id));
 }
@@ -62,8 +66,10 @@ function estimateVoices(episode) {
   const map = new Map();
   for (const scene of episode.scenes) {
     (scene.lines || []).forEach((line, i) => {
-      const chars = [...line.text.replace(/[，。！？、；：“”‘’（）《》\s]/g, '')].length;
-      const duration = Math.max(1.2, chars * 0.24 + 0.3);
+      // 中文、日文按字数（约 4 字/秒）；西文按词数（约 2.7 词/秒）
+      const duration = /^(zh|ja)/.test(episode.lang || 'zh')
+        ? Math.max(1.2, [...line.text.replace(/[，。！？、；：“”‘’（）《》\s]/g, '')].length * 0.24 + 0.3)
+        : Math.max(1.2, line.text.split(/\s+/).filter((w) => /[\p{L}\d]/u.test(w)).length / 2.7 + 0.3);
       const frames = Math.ceil(duration * config.fps);
       const envelope = Array.from({ length: frames }, (_, f) => (Math.floor(f / 3) % 3 === 2 ? 0.1 : 0.7));
       map.set(`${scene.id}#${i}`, { file: null, duration, envelope });
@@ -120,7 +126,7 @@ async function makeAudio(episode, timeline, dir, opts) {
 const commands = {
   async build(opts) {
     for (const bin of ['ffmpeg', 'ffprobe']) if (!hasBinary(bin)) throw new Error(`需要安装 ${bin}`);
-    const episode = loadEpisode(opts._[1]);
+    const episode = load(opts);
     log.step(`开始制作《${episode.title}》${episode.subtitle ? `：${episode.subtitle}` : ''}`);
     const { timeline, file, dir } = await makeTimeline(episode, opts);
     const mix = await makeAudio(episode, timeline, dir, opts);
@@ -136,31 +142,31 @@ const commands = {
   },
 
   async tts(opts) {
-    const episode = loadEpisode(opts._[1]);
+    const episode = load(opts);
     const { synthesizeEpisode } = await import('./gemini/tts.js');
     await synthesizeEpisode(episode, path.join(buildDir(episode), 'voice'), { force: !!opts.force, verify: opts.verify !== false });
   },
 
   async music(opts) {
-    const episode = loadEpisode(opts._[1]);
+    const episode = load(opts);
     const { timeline, dir } = await makeTimeline(episode, opts);
     await makeAudio(episode, timeline, dir, { ...opts, 'force-music': opts.force || opts['force-music'] });
   },
 
   async timeline(opts) {
-    const episode = loadEpisode(opts._[1]);
+    const episode = load(opts);
     await makeTimeline(episode, opts);
   },
 
   async still(opts) {
-    const episode = loadEpisode(opts._[1]);
+    const episode = load(opts);
     const dir = buildDir(episode);
     const file = path.join(dir, 'timeline.json');
     let timeline;
     if (fs.existsSync(file) && !opts.rebuild) {
       timeline = JSON.parse(fs.readFileSync(file, 'utf8'));
       // 剧本修改后时间线中的画面描述需要刷新（不重新配音）
-      const fresh = loadEpisode(opts._[1]);
+      const fresh = load(opts);
       const byId = Object.fromEntries(fresh.scenes.map((s) => [s.id, s]));
       const sameShape = timeline.scenes.length === fresh.scenes.length && timeline.scenes.every((s) => byId[s.id] && (byId[s.id].lines || []).length === s.lines.length);
       if (sameShape) {
@@ -169,7 +175,7 @@ const commands = {
           const lines = s.lines.map((l, i) => ({ ...l, ...f.lines[i], start: l.start, end: l.end, duration: l.duration, envelope: l.envelope, audio: l.audio, id: l.id }));
           return { ...f, start: s.start, end: s.end, index: s.index, transition: s.transition, lines };
         });
-        timeline.episode = { ...timeline.episode, characters: fresh.characters || {}, cast: fresh.cast, components: fresh.components || null };
+        timeline.episode = episodeSection(fresh);
         fs.writeFileSync(file, JSON.stringify(timeline));
       } else {
         ({ timeline } = await makeTimeline(fresh, { ...opts, tts: opts.tts }));
@@ -190,7 +196,7 @@ const commands = {
   },
 
   async preview(opts) {
-    const episode = loadEpisode(opts._[1]);
+    const episode = load(opts);
     const dir = buildDir(episode);
     const file = path.join(dir, 'timeline.json');
     if (!fs.existsSync(file)) await makeTimeline(episode, { ...opts, tts: opts.tts });
@@ -204,7 +210,7 @@ const commands = {
   },
 
   async check(opts) {
-    const episode = loadEpisode(opts._[1]);
+    const episode = load(opts);
     const { checkEpisode } = await import('./gemini/check.js');
     await checkEpisode(episode, path.join(buildDir(episode), 'voice'));
   },
@@ -214,6 +220,12 @@ const commands = {
     if (!topic) throw new Error('请提供主题，例如：npm run write -- "赤壁之战"');
     const { writeEpisode } = await import('./claude/writer.js');
     await writeEpisode(topic, { id: opts.id, minutes: Number(opts.minutes || 3) });
+  },
+
+  async translate(opts) {
+    if (typeof opts.lang !== 'string') throw new Error('请指定语言，例如：node src/cli.js translate zhang-qian --lang en');
+    const { translateEpisode } = await import('./claude/translate.js');
+    await translateEpisode(opts._[1], opts.lang);
   },
 
   async voices() {

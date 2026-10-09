@@ -178,3 +178,16 @@ export function setTransform(node, { x = 0, y = 0, scale = 1, sx, sy, rotate = 0
   node.setAttribute('transform',
     `translate(${x.toFixed(2)},${y.toFixed(2)}) rotate(${rotate.toFixed(3)}) scale(${scx.toFixed(4)},${scy.toFixed(4)}) translate(${-ox},${-oy})`);
 }
+
+// 粗略估算文字宽度（像素），用于给标签留白；汉字按 1em，拉丁字母按字形宽窄估算
+export function latinWidth(text, size, caps = false) {
+  let w = 0;
+  for (const ch of String(text)) {
+    if (/\p{Script=Han}/u.test(ch)) w += 1;
+    else if (ch === ' ') w += 0.28;
+    else if (/[A-Z]/.test(ch) || caps) w += 0.72;
+    else if (/[a-z0-9]/.test(ch)) w += 0.5;
+    else w += 0.32;
+  }
+  return w * size;
+}

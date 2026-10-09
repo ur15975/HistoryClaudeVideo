@@ -66,22 +66,29 @@ export function buildTimeline(episode, voiceMap, { fps = 24, width = 1920, heigh
     height,
     duration,
     frames: Math.ceil(duration * fps),
-    episode: {
-      id: episode.id,
-      title: episode.title,
-      subtitle: episode.subtitle,
-      cast: episode.cast,
-      characters: episode.characters || {},
-      palette: episode.palette || {},
-      components: episode.components || null,
-      subtitles: episode.subtitles ?? true,
-    },
+    episode: episodeSection(episode),
     scenes,
     cues,
   };
 }
 
 const round = (x) => Math.round(x * 1000) / 1000;
+
+// 时间线里给浏览器端引擎用的剧集信息
+export function episodeSection(episode) {
+  return {
+    id: episode.id,
+    baseId: episode.baseId || episode.id,
+    lang: episode.lang || 'zh',
+    title: episode.title,
+    subtitle: episode.subtitle,
+    cast: episode.cast,
+    characters: episode.characters || {},
+    palette: episode.palette || {},
+    components: episode.components || null,
+    subtitles: episode.subtitles ?? true,
+  };
+}
 
 // SRT 字幕
 export function toSrt(timeline) {
@@ -99,8 +106,9 @@ export function toSrt(timeline) {
   const out = [];
   for (const scene of timeline.scenes) {
     for (const line of scene.lines) {
-      const who = line.speaker !== 'narrator' && cast[line.speaker]?.name ? `${cast[line.speaker].name}：` : '';
-      out.push(`${++n}\n${fmt(line.start)} --> ${fmt(line.end + 0.2)}\n${who}${line.text}\n`);
+      const sep = /^zh|^ja/.test(timeline.episode.lang || 'zh') ? '：' : ': ';
+      const who = line.speaker !== 'narrator' && cast[line.speaker]?.name ? `${cast[line.speaker].name}${sep}` : '';
+      out.push(`${++n}\n${fmt(line.start)} --> ${fmt(line.end + 0.2)}\n${who}${line.subtitle || line.text}\n`);
     }
   }
   return out.join('\n');

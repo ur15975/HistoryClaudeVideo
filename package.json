@@ -18,10 +18,13 @@
     "still": "node src/cli.js still",
     "preview": "node src/cli.js preview",
     "write": "node src/cli.js write",
+    "translate": "node src/cli.js translate",
     "check": "node src/cli.js check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/eb-garamond": "^5.3.0",
     "@fontsource/ma-shan-zheng": "^5.2.0",
     "lxgw-wenkai-webfont": "^1.7.0",
     "pinyin-pro": "^3.29.4",

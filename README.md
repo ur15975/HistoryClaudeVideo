@@ -63,6 +63,16 @@ npm run build -- su-wu
 
 剧本格式和全部组件参数见 [`docs/episode-format.md`](docs/episode-format.md)。
 
+## 英文版（多语言）
+
+每一集都可以出其他语言版本：英文配音、英文字幕，画面里的地点牌、地图地名、标题副题、片尾引文译文也会换成英文（书法标题和印章保留为视觉元素）。
+
+```bash
+npm run build -- zhang-qian --lang en     # → build/zhang-qian-en/zhang-qian-en.mp4 和 .srt
+```
+
+语言版本是剧本旁边的一个覆盖层文件 `episodes/<id>/episode.<lang>.json`，只写台词和画面文字，画面与镜头沿用原剧本。新剧集要出英文版：在 Claude Code 里说“给这一集做英文版”，或用 `npm run translate -- <id> --lang en` 调用 Claude API 自动翻译。格式见 [`docs/episode-format.md`](docs/episode-format.md#多语言版本)。
+
 ## 命令
 
 | 命令 | 作用 |
@@ -74,9 +84,10 @@ npm run build -- su-wu
 | `npm run music -- <剧集>` | 只生成配乐并混音 |
 | `npm run check -- <剧集>` | 输出配音校对报告 |
 | `npm run write -- "<主题>"` | 用 Claude 写新剧本 |
+| `npm run translate -- <剧集> --lang en` | 用 Claude 写该集的英文覆盖层 |
 | `node src/cli.js voices` | 列出 Gemini 音色 |
 
-常用选项：`--no-tts`（无配音快速预览）、`--music synth|none`、`--from s05 --to s08`（只渲染一段）、`--scale 0.5`（草稿质量）、`--force-tts` / `--force-music`（忽略缓存）、`--no-verify`（跳过配音校对）。
+常用选项：`--lang en`（语言版本）、`--no-tts`（无配音快速预览）、`--music synth|none`、`--from s05 --to s08`（只渲染一段）、`--scale 0.5`（草稿质量）、`--force-tts` / `--force-music`（忽略缓存）、`--no-verify`（跳过配音校对）。
 
 ## 关于背景音乐
 

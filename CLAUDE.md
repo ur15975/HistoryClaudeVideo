@@ -13,6 +13,12 @@
    - 校对必须用专用听写模型：通用对话模型会自动省略“用……的语气说”这类话，造成漏判。
 6. 有读错的句子：给台词加 `say`（同音字改写）或把 `take` 加 1，再 build；查看汇总：`npm run check -- <id>`。
 
+## 做其他语言版本
+
+1. 在 `episodes/<id>/episode.<lang>.json` 写语言覆盖层（格式见 `docs/episode-format.md`“多语言版本”）：句数必须与原剧本一致；画面文字（标题 `sub`、引文 `translation`、地图 `markers[].label`）通过 `layers` 覆盖；地图内置地名已有英文名，无需翻译。
+2. 用 Gemini TTS 实测拼音人名在英语里的读法，读错的写进 `pronunciations`（西文整词替换，只影响配音）。
+3. `npm run still -- <id> --lang <lang> --no-tts --rebuild` 检查西文排版（地名重叠、字幕行数、标题卡），再 `npm run build -- <id> --lang <lang>`。输出在 `build/<id>-<lang>/`。
+
 现有组件画不出来的东西，在 `episodes/<id>/components.js` 里写自定义组件（见 `docs/episode-format.md` 末尾），或在剧本里用 `svg.raw` 直接写 SVG。通用的新组件加到 `engine/lib/` 对应文件并补文档。
 
 ## 代码结构
@@ -20,7 +26,8 @@
 - `src/cli.js` — 命令入口（build / still / tts / music / preview / check / write）
 - `src/gemini/` — Gemini 客户端（限速、429 重试）、TTS、配音校对、Lyria 配乐、读音表
 - `src/pipeline/` — 时间线、混音（闪避）、程序化音乐/环境音、静态服务器、Playwright 渲染
-- `src/claude/writer.js` — 用 Claude API 由主题生成剧本（需要 `ANTHROPIC_API_KEY`）
+- `src/claude/` — 用 Claude API 由主题写剧本（`writer.js`）、为剧集写语言覆盖层（`translate.js`），需要 `ANTHROPIC_API_KEY`
+- `src/episode.js` — 剧本加载、校验、语言覆盖层合并
 - `engine/` — 浏览器端引擎：`engine.js`（场景、镜头、转场、字幕）、`lib/*.js`（组件库）
 
 ## 约定

@@ -1,0 +1,239 @@
+{
+  "lang": "en",
+  "title": "Chiseling Through the Void",
+  "subtitle": "Zhang Qian's Mission to the Western Regions",
+  "cast": {
+    "narrator": {
+      "name": "Narrator"
+    },
+    "wudi": {
+      "name": "Emperor Wu"
+    },
+    "zhangqian": {
+      "name": "Zhang Qian"
+    },
+    "chanyu": {
+      "name": "Junchen Chanyu"
+    },
+    "huqi": {
+      "name": "Xiongnu Wife"
+    },
+    "ganfu": {
+      "name": "Gan Fu"
+    }
+  },
+  "pronunciations": {
+    "Zhang Qian": "Jahng Chyen",
+    "Sima Qian": "Suh-mah Chyen",
+    "Yuezhi": "Yway-jur",
+    "Weiyang": "Way-yahng",
+    "Hexi": "Heh-shee",
+    "Nanyue": "Nahn-yway",
+    "Záo kōng": "Zao kong"
+  },
+  "scenes": {
+    "s01": {
+      "lines": [
+        {
+          "text": "On the steppe at night, the starry sky spreads like a vast tent over the whole world."
+        },
+        {
+          "text": "Over two thousand years ago, one man was trapped beneath these stars for ten years."
+        }
+      ]
+    },
+    "s02": {
+      "layers": {
+        "1": {
+          "params": {
+            "sub": "Chiseling Through the Void",
+            "sub2": "Zhang Qian's Mission to the Western Regions"
+          }
+        }
+      }
+    },
+    "s03": {
+      "caption": "Chang'an · Weiyang Palace",
+      "lines": [
+        {
+          "text": "Early in his reign, Emperor Wu of Han heard a report from Xiongnu defectors."
+        },
+        {
+          "text": "The Xiongnu had slain the Yuezhi king and made his skull a cup. Driven west, the Yuezhi hated them bitterly."
+        },
+        {
+          "text": "Ally with the Yuezhi, strike from east and west, and the Xiongnu will fall. Who will go for me?"
+        }
+      ]
+    },
+    "s04": {
+      "lines": [
+        {
+          "text": "The one who stepped forward was a young palace attendant, Zhang Qian."
+        },
+        {
+          "text": "Your servant, Zhang Qian, will go."
+        },
+        {
+          "text": "With him went Gan Fu, a Xiongnu by birth, skilled with horse and bow."
+        }
+      ]
+    },
+    "s05": {
+      "lines": [
+        {
+          "text": "Around 138 BC, a mission of over a hundred men left the capital, Chang'an, heading west through Longxi."
+        },
+        {
+          "text": "But the only road to the Yuezhi ran through the Xiongnu-held Hexi Corridor."
+        },
+        {
+          "text": "Xiongnu horsemen soon seized them and took them to the Chanyu, their supreme ruler."
+        }
+      ],
+      "layers": {
+        "0": {
+          "params": {
+            "markers": [
+              {
+                "label": "Captured"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "s06": {
+      "caption": "Xiongnu Lands · The Chanyu's Court",
+      "lines": [
+        {
+          "text": "The Yuezhi are to my north. How dare Han send envoys there?"
+        },
+        {
+          "text": "If I sent envoys through Han to Nanyue, would Han let them pass?"
+        },
+        {
+          "text": "The Chanyu held Zhang Qian — and held him for ten years."
+        }
+      ]
+    },
+    "s07": {
+      "caption": "Xiongnu Lands · Ten Years",
+      "lines": [
+        {
+          "text": "The Xiongnu gave him a wife, and he became a father."
+        },
+        {
+          "text": "On the steppe, winter followed summer, year after year, and it seemed life would go on like this."
+        }
+      ]
+    },
+    "s08": {
+      "lines": [
+        {
+          "text": "You still mean to leave, don't you?"
+        },
+        {
+          "text": "…I promised His Majesty."
+        },
+        {
+          "text": "History records only this: he held the Han envoy's staff, and never parted with it."
+        }
+      ]
+    },
+    "s09": {
+      "lines": [
+        {
+          "text": "Over time, his guards grew lax. One night, Zhang Qian and his men slipped away and rode west."
+        },
+        {
+          "text": "My lord, stay close! Ride west!"
+        }
+      ]
+    },
+    "s10": {
+      "lines": [
+        {
+          "text": "For weeks they pressed on over snowy mountains, until they reached Dayuan, in the Ferghana Valley."
+        },
+        {
+          "text": "Its king had long heard of Han's wealth. He gave them guides to Kangju, and Kangju sent them on to the Yuezhi."
+        }
+      ]
+    },
+    "s11": {
+      "caption": "Oxus River · Great Yuezhi",
+      "lines": [
+        {
+          "text": "But by then the Yuezhi had settled on the fertile banks of the Oxus, and conquered Daxia, or Bactria."
+        },
+        {
+          "text": "The land was rich, enemies were few, and they had no heart left for revenge on the Xiongnu."
+        },
+        {
+          "text": "Zhang Qian stayed more than a year, but the Yuezhi would not be moved."
+        }
+      ]
+    },
+    "s12": {
+      "lines": [
+        {
+          "text": "Heading home along the Southern Mountains, he hoped to cross Qiang country, but the Xiongnu caught him again."
+        },
+        {
+          "text": "Over a year later, the Chanyu died. In the turmoil that followed, Zhang Qian fled with his wife and Gan Fu."
+        }
+      ],
+      "layers": {
+        "0": {
+          "params": {
+            "markers": [
+              {
+                "label": "Captured again"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "s13": {
+      "caption": "126 BC · Chang'an",
+      "lines": [
+        {
+          "text": "In 126 BC, Zhang Qian came home to Chang'an at last."
+        },
+        {
+          "text": "More than a hundred men had set out. Thirteen years later, only two came back."
+        }
+      ]
+    },
+    "s14": {
+      "lines": [
+        {
+          "text": "His mission had failed. But he brought back word of the Western Regions: their lands, goods and roads."
+        },
+        {
+          "text": "From then on, East and West were joined by the road now called the Silk Road."
+        }
+      ]
+    },
+    "s15": {
+      "lines": [
+        {
+          "text": "Sima Qian, the Grand Historian, would sum up Zhang Qian's feat in two words —"
+        },
+        {
+          "text": "Záo kōng — he had chiseled a way through the void."
+        }
+      ],
+      "layers": {
+        "1": {
+          "params": {
+            "translation": "Yet it was Zhang Qian\nwho chiseled a way through the void.",
+            "translationSource": "Records of the Grand Historian, Account of Dayuan"
+          }
+        }
+      }
+    }
+  }
+}

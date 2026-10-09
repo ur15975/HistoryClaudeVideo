@@ -17,11 +17,20 @@ export const DEFAULT_PRONUNCIATIONS = {
   会稽: '快稽',
 };
 
-export function applyPronunciations(text, extra = {}) {
-  const dict = { ...DEFAULT_PRONUNCIATIONS, ...extra };
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// lang 为中文时叠加默认读音表；其他语言只用剧本（覆盖层）自己的读音表
+export function applyPronunciations(text, extra = {}, lang = 'zh') {
+  const dict = lang.startsWith('zh') ? { ...DEFAULT_PRONUNCIATIONS, ...extra } : { ...extra };
   // 长词优先，避免“堂邑父”被“甘父”之类的短词抢先替换
   const keys = Object.keys(dict).sort((a, b) => b.length - a.length);
   let out = text;
-  for (const k of keys) out = out.split(k).join(dict[k]);
+  const cjk = /^(zh|ja)/.test(lang);
+  for (const k of keys) {
+    // 中文、日文：直接替换（与之前一致）；西文：整词替换，避免把 "Han" 换进 "Khan"，
+    // 词边界只看拉丁字母和数字，紧挨汉字的键照样能替换
+    if (cjk || /\p{Script=Han}/u.test(k)) out = out.split(k).join(dict[k]);
+    else out = out.replace(new RegExp(`(?<![\\p{Script=Latin}\\p{M}\\d])${escapeRe(k)}(?![\\p{Script=Latin}\\p{M}\\d])`, 'gu'), () => dict[k]);
+  }
   return out;
 }

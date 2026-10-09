@@ -228,3 +228,43 @@ register('custom.skullcup', (params, ctx) => {
 ```
 
 `ctx` 提供：`defs`（放渐变/裁剪）、`timeOf(时间表达式)`、`rng(seed)`（可复现随机数）、`mouth(角色id, t)`、`lineAt(t)`、`duration`。`update(t)` 的 `t` 是场景内秒数，必须是纯函数（不能依赖上一帧的状态）。
+
+## 多语言版本
+
+同一集的其他语言版本不复制剧本，而是在剧本旁边放一个**语言覆盖层** `episode.<lang>.json`，只写需要换语言的部分；画面、镜头、动作全部沿用原剧本。以后改画面，各语言版本一起生效。
+
+```bash
+npm run still -- zhang-qian --lang en --no-tts --rebuild   # 检查英文画面文字
+npm run build -- zhang-qian --lang en                      # 出片 → build/zhang-qian-en/zhang-qian-en.mp4
+node src/cli.js translate <剧集> --lang en                 # 用 Claude API 自动写覆盖层（需要 ANTHROPIC_API_KEY）
+```
+
+```json
+{
+  "lang": "en",
+  "title": "Chiseling Through",
+  "subtitle": "Zhang Qian and the Road West",
+  "cast": { "narrator": { "name": "Narrator" }, "wudi": { "name": "Emperor Wu" } },
+  "pronunciations": { "Zhang Qian": "Jahng Chyen" },
+  "scenes": {
+    "s03": {
+      "caption": "Chang'an · Weiyang Palace",
+      "lines": [ { "text": "…" }, { "text": "…" }, { "text": "…" } ]
+    },
+    "s02": { "layers": { "1": { "params": { "sub": "Zhang Qian and the Road West", "sub2": "…" } } } }
+  }
+}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `lang` | 语言代码。`zh`/`ja` 以外的语言按西文排版（横排地点牌、EB Garamond 字幕、Cinzel 标题） |
+| `title` `subtitle` `description` | 替换原剧本的同名字段 |
+| `cast` | 与原 `cast` 深合并，通常只改 `name`（字幕名牌），也可以换 `voice` |
+| `pronunciations` | 本语言的 TTS 读音改写表（不继承中文读音表），西文按整词替换，例如把拼音人名改写成英语读者更容易读准的拼法 |
+| `scenes.<id>.lines` | **句数和顺序必须与原场景一致**（镜头关键帧按句子下标对齐）。每句可写 `text`、`say`、`subtitle`；原剧本里与语言绑定的 `say`/`take`/`tone`/`subtitle` 会被丢弃 |
+| `scenes.<id>.caption` | 地点牌，用 ` · ` 分成两行 |
+| `scenes.<id>.layers` | 按图层下标（或图层 `id`）深合并，用来换画面文字：`text.title` 的 `sub`/`sub2`，`text.quote` 的 `translation`/`translationSource`，地图 `markers` 的 `label` 等 |
+| `music` `tts` | 可选，覆盖配乐或配音设置 |
+
+引擎会自动处理：地图内置地名有英文名（`en` 字段）、指北针显示 N、区域名改为大写碑刻体；书法标题、印章、竖排引文作为视觉元素保留，英文版在下方配译文。有台词却没写翻译的场景会报错，避免漏翻。

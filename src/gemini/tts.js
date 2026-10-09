@@ -23,9 +23,9 @@ export const VOICES = {
 // 送进 TTS 的文本。实测 Gemini 3.8 TTS 会把中文语气提示（“用……的语气说：”）原样念出来，
 // 所以默认只送台词，角色气质靠音色区分；某个角色确实需要特别语气时，在 cast 里设 direct: true，
 // 改用英文导演备注（仍有少量误读，由逐句校对兜底重录）。
-export function buildPrompt(line, cast, pronunciations) {
+export function buildPrompt(line, cast, pronunciations, lang = 'zh') {
   const role = cast[line.speaker] || cast.narrator || {};
-  const spoken = applyPronunciations(line.say || line.text, pronunciations);
+  const spoken = applyPronunciations(line.say || line.text, pronunciations, lang);
   const direction = [role.style, line.tone].filter(Boolean).join('，');
   if ((role.direct || line.direct) && direction) return `[Voice direction, do not read aloud: ${direction}]\n${spoken}`;
   return spoken;
@@ -54,7 +54,12 @@ async function synthesize(model, voice, prompt) {
   return { channels: pcm16ToChannels(bytes, 1), sampleRate: rate };
 }
 
-const countChars = (t) => [...t.replace(/[\s，。！？、；：“”‘’（）《》,.!?;:"'()\-—…·「」]/g, '')].length;
+// 语速单位：中文按字，其他语言按词
+const countUnits = (t, lang) => (lang.startsWith('zh') || lang.startsWith('ja')
+  ? [...t.replace(/[\s，。！？、；：“”‘’（）《》,.!?;:"'()\-—…·「」]/g, '')].length
+  : t.split(/\s+/).filter((w) => /[\p{L}\d]/u.test(w)).length);
+// 低于这个语速才提速：中文 3.2 字/秒，日文 4.5 字/秒，西文 2.2 词/秒
+const MIN_RATE = { zh: 3.2, ja: 4.5, en: 2.2 };
 
 // 生成（或取缓存）某一句的某个“版本”。缓存按模型区分；主模型配额用尽时换后备模型
 async function getTake({ voice, prompt, take, force, cacheDir, id, text }) {
@@ -85,14 +90,15 @@ async function getTake({ voice, prompt, take, force, cacheDir, id, text }) {
 }
 
 // 后期：去首尾静音 → 压缩长停顿 → 语速过慢时适度提速
-async function postProcess(raw, outFile, text, opts) {
+async function postProcess(raw, outFile, text, opts, lang = 'zh') {
   const wav = readWav(raw);
   let mono = trimSilence(toMono(wav.channels), wav.sampleRate);
   if (opts.compressPauses !== false) mono = compressPauses(mono, wav.sampleRate, { maxPause: opts.maxPause ?? 0.34 });
-  const chars = countChars(text);
-  const rate = chars / (mono.length / wav.sampleRate);
+  const units = countUnits(text, lang);
+  const rate = units / (mono.length / wav.sampleRate);
+  const minRate = opts.minRate ?? MIN_RATE[lang.slice(0, 2)] ?? 2.2;
   let tempo = opts.speed || 1;
-  if (chars >= 6 && rate * tempo < (opts.minRate ?? 3.2)) tempo = Math.min(opts.maxTempo ?? 1.25, (opts.minRate ?? 3.2) / rate);
+  if (units >= 6 && rate * tempo < minRate) tempo = Math.min(opts.maxTempo ?? 1.25, minRate / rate);
   writeWav(outFile, [mono], wav.sampleRate);
   if (Math.abs(tempo - 1) > 0.02) {
     const tmp = `${outFile}.tmp.wav`;
@@ -112,6 +118,7 @@ export async function synthesizeEpisode(episode, outDir, { force = false, verify
   const cacheDir = ensureDir(path.join(config.dirs.cache, 'tts'));
   ensureDir(outDir);
   const cast = episode.cast || {};
+  const lang = episode.lang || 'zh';
   const ttsOpts = episode.tts || {};
   const maxTakes = ttsOpts.maxTakes ?? 3;
   const jobs = [];
@@ -128,8 +135,8 @@ export async function synthesizeEpisode(episode, outDir, { force = false, verify
     const role = cast[line.speaker] || cast.narrator;
     if (!role) throw new Error(`台词 ${id} 的说话人 "${line.speaker}" 未在 cast 中定义`);
     const voice = line.voice || role.voice || 'Charon';
-    const prompt = buildPrompt(line, cast, episode.pronunciations);
-    const spoken = applyPronunciations(line.say || line.text, episode.pronunciations);
+    const prompt = buildPrompt(line, cast, episode.pronunciations, lang);
+    const spoken = applyPronunciations(line.say || line.text, episode.pronunciations, lang);
     const base = line.take || 0;
 
     let chosen = null;
@@ -139,15 +146,15 @@ export async function synthesizeEpisode(episode, outDir, { force = false, verify
       if (take.fresh) fresh++;
       if (!verify) { chosen = take; break; }
       const metaFile = take.raw.replace(/\.wav$/, '.check.json');
-      const direction = prompt !== spoken ? [role.style, line.tone].filter(Boolean).join('，') : '';
+      const direction = prompt !== spoken ? [role.style, line.tone].filter(Boolean).join(lang.startsWith('zh') ? '，' : ', ') : '';
       let check = !take.fresh && fs.existsSync(metaFile) ? JSON.parse(fs.readFileSync(metaFile, 'utf8')) : null;
       // 早期版本的校对用通用模型听写，结果不可靠，重校；可靠的听写原文每次重新判定
       if (check && !(check.v >= 2)) check = null;
-      if (check) check = { ...check, ...judge(check.heard, line.text, spoken, direction) };
+      if (check) check = { ...check, ...judge(check.heard, line.text, spoken, direction, lang) };
       const cachedCheck = !!check;
       if (!check) {
         try {
-          check = await verifyClip(take.raw, line.text, spoken, direction);
+          check = await verifyClip(take.raw, line.text, spoken, direction, lang);
           fs.writeFileSync(metaFile, JSON.stringify(check));
         } catch (err) {
           // 校对服务不可用时不阻塞出片，也不写缓存，下次再校
@@ -168,7 +175,7 @@ export async function synthesizeEpisode(episode, outDir, { force = false, verify
     }
 
     const file = path.join(outDir, `${id.replace('#', '_')}.wav`);
-    const pp = await postProcess(chosen.raw, file, line.text, { ...ttsOpts, speed: role.speed || ttsOpts.speed });
+    const pp = await postProcess(chosen.raw, file, line.text, { ...ttsOpts, speed: role.speed || ttsOpts.speed }, lang);
     return [id, {
       file,
       cacheFile: chosen.raw,

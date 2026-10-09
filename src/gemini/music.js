@@ -50,6 +50,13 @@ export async function prepareMusic(episode, cues, outDir, { force = false, provi
 
     if (mode === 'lyria') {
       const model = config.gemini.musicModels[0];
+      // 已有稍长一点（≤20 秒）且通过人声质检的同一段配乐（例如另一语言版本生成过）就直接复用，结尾会淡出
+      const exact = path.join(cacheDir, `${crypto.createHash('sha1').update(`${model}|${prompt}`).digest('hex').slice(0, 20)}.mp3`);
+      const reuse = force || fs.existsSync(exact) ? null : findReusable(model, cue, style, seconds, cacheDir);
+      if (reuse) {
+        out.push({ ...cue, file: reuse.file, prompt: reuse.prompt });
+        continue;
+      }
       let chosen = null;
       for (let take = 0; take < 3 && !chosen; take++) {
         const key = crypto.createHash('sha1').update(`${model}|${prompt}${take ? `|take${take}` : ''}`).digest('hex').slice(0, 20);
@@ -85,6 +92,22 @@ export async function prepareMusic(episode, cues, outDir, { force = false, provi
     }
   }
   return out;
+}
+
+function findReusable(model, cue, style, seconds, cacheDir) {
+  for (let sec = seconds + 10; sec <= Math.min(180, seconds + 20); sec += 10) {
+    const prompt = buildMusicPrompt(cue, style, sec);
+    for (let take = 0; take < 3; take++) {
+      const key = crypto.createHash('sha1').update(`${model}|${prompt}${take ? `|take${take}` : ''}`).digest('hex').slice(0, 20);
+      const file = path.join(cacheDir, `${key}.mp3`);
+      const meta = file.replace(/\.mp3$/, '.check.json');
+      if (fs.existsSync(file) && fs.existsSync(meta) && !JSON.parse(fs.readFileSync(meta, 'utf8')).vocals) {
+        log.info(`  🎵 复用已生成的「${cue.id}」${sec}s 版本`);
+        return { file, prompt };
+      }
+    }
+  }
+  return null;
 }
 
 function synthFallback(cue, outDir) {

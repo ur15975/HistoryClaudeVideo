@@ -1,9 +1,14 @@
 // 文字：书法标题、印章、引文
-import { svg, group, W, H, PALETTE as P, clamp, getEase, rng, uid } from './core.js';
+import { svg, group, W, H, PALETTE as P, clamp, getEase, rng, uid, latinWidth } from './core.js';
 import { register } from './registry.js';
 
 const BRUSH = 'Ma Shan Zheng, LXGW WenKai, serif';
 const KAI = 'LXGW WenKai, serif';
+// 拉丁文字（英文版）：碑刻风格的大写体 + 古典衬线正文
+const ROMAN = 'Cinzel, EB Garamond, serif';
+const SERIF = 'EB Garamond, LXGW WenKai, serif';
+const hasHan = (s) => /\p{Script=Han}/u.test(s || '');
+
 
 // 一笔浓墨（用作标题底衬）：起笔顿、收笔尖，带飞白
 function brushStroke(w, h, seed, color = '#2b2422') {
@@ -61,18 +66,34 @@ export function seal(text, size = 120, color = '#b5352a') {
 register('text.title', (p, ctx) => {
   const g = group();
   const chars = [...(p.text || '')];
-  const size = p.size || 220;
+  const n = chars.length;
   const color = p.color || '#2b2422';
   const at = ctx.timeOf(p.at ?? 0.3);
   const per = p.perChar ?? 0.45;
   const vertical = p.vertical !== false;
+  // 西文版本且副标题是西文时：书法竖排在上，西文副标题横排在下（中文版排版保持不变）
+  const latinSub = ctx.latin && !!p.sub && !hasHan(p.sub) && vertical;
+  const subSize = p.subSize || 50;
+  const sub2Size = p.sub2Size || 38;
+  // 西文副标题这一块的固定高度（不随书法字号变化）
+  const subBlock = latinSub ? 30 + subSize * 0.4 + (p.sub2 ? sub2Size * 1.6 : 0) : 0;
+  let size = p.size || 220;
+  if (latinSub && !p.size) {
+    // 书法列 + 副标题整体放进画面（上下各留 70px），字多时自动缩小
+    size = Math.min(size, (H - 140 - subBlock) / ((n - 1) * 1.02 + 0.95 + 0.55));
+  }
   const x0 = p.x ?? W / 2;
-  const y0 = p.y ?? (vertical ? H / 2 - ((chars.length - 1) * size * 1.02) / 2 : H / 2);
+  const y0 = p.y ?? (latinSub
+    // 整块（书法顶 → 副标题底）垂直居中；第一个字的基线在字顶下方约 0.95 个字号
+    ? (H - ((n - 1) * size * 1.02 + size * 0.55 + subBlock + size * 0.95)) / 2 + size * 0.95
+    : vertical ? H / 2 - ((n - 1) * size * 1.02) / 2 : H / 2);
 
   let stroke = null;
   if (p.brush !== false) {
-    stroke = brushStroke(vertical ? chars.length * size * 1.3 : chars.length * size * 1.15, vertical ? size * 1.05 : size * 1.1, p.text, p.brushColor || '#a8382a');
-    if (vertical) stroke.setAttribute('transform', `translate(${x0 + size * 0.06},${y0 + ((chars.length - 1) * size * 1.02) / 2 - size * 0.36}) rotate(84)`);
+    // 下方有西文副标题时笔触收短，不压到副标题
+    const len = vertical ? (n * 1.3 - (latinSub ? 0.35 : 0)) * size : n * size * 1.15;
+    stroke = brushStroke(len, vertical ? size * 1.05 : size * 1.1, p.text, p.brushColor || '#a8382a');
+    if (vertical) stroke.setAttribute('transform', `translate(${x0 + size * 0.06},${y0 + ((n - 1) * size * 1.02) / 2 - size * (latinSub ? 0.46 : 0.36)}) rotate(84)`);
     else stroke.setAttribute('transform', `translate(${x0},${y0 - size * 0.35})`);
     stroke.setAttribute('opacity', '0');
     g.appendChild(stroke);
@@ -88,7 +109,36 @@ register('text.title', (p, ctx) => {
     return { el, rect, i, y };
   });
   let subEl = null;
-  if (p.sub) {
+  let ornaments = null;
+  if (latinSub) {
+    subEl = group();
+    const sy = y0 + (n - 1) * size * 1.02 + size * 0.55 + 30;
+    const label = String(p.sub).toUpperCase();
+    const subText = svg('text', { x: x0, y: sy, 'text-anchor': 'middle', 'font-family': ROMAN, 'font-weight': 700, 'font-size': subSize, 'letter-spacing': 5, fill: p.subColor || color, text: label });
+    subEl.appendChild(subText);
+    // 两侧装饰线：先按估算宽度放置，首次可见时按实际渲染宽度校正（字体已预加载）
+    const parts = [-1, 1].map((sgn) => {
+      const line = svg('line', { y1: sy - subSize * 0.34, y2: sy - subSize * 0.34, stroke: p.brushColor || '#a8382a', 'stroke-width': 3 });
+      const dot = svg('circle', { cy: sy - subSize * 0.34, r: 4.5, fill: p.brushColor || '#a8382a' });
+      subEl.append(line, dot);
+      return { sgn, line, dot };
+    });
+    const place = (w) => {
+      for (const { sgn, line, dot } of parts) {
+        const a = x0 + sgn * (w / 2 + 34);
+        line.setAttribute('x1', a.toFixed(1));
+        line.setAttribute('x2', (a + sgn * 90).toFixed(1));
+        dot.setAttribute('cx', (a + sgn * 98).toFixed(1));
+      }
+    };
+    place(latinWidth(label, subSize, true) + label.length * 5);
+    ornaments = { subText, place, measured: false };
+    if (p.sub2) {
+      subEl.appendChild(svg('text', { x: x0, y: sy + subSize * 1.25, 'text-anchor': 'middle', 'font-family': SERIF, 'font-style': 'italic', 'font-weight': 500, 'font-size': sub2Size, fill: p.subColor || color, text: p.sub2 }));
+    }
+    subEl.setAttribute('opacity', '0');
+    g.appendChild(subEl);
+  } else if (p.sub) {
     const sx = vertical ? x0 - size * 0.95 : x0;
     const sy = vertical ? y0 - size * 0.55 : y0 + size * 0.75;
     subEl = group();
@@ -105,8 +155,9 @@ register('text.title', (p, ctx) => {
     sealEl = seal(p.seal, p.sealSize || 110);
     g.appendChild(sealEl);
   }
+  // 西文副标题占了下方，印章移到书法右上
   const sealX = p.sealX ?? (vertical ? x0 + size * 0.85 : x0 + (chars.length / 2) * size * 1.05 + 60);
-  const sealY = p.sealY ?? (vertical ? y0 + (chars.length - 0.6) * size * 1.02 : y0 + size * 0.2);
+  const sealY = p.sealY ?? (latinSub ? Math.max(y0 - size * 0.3, (p.sealSize || 110) / 2 + 50) : vertical ? y0 + (chars.length - 0.6) * size * 1.02 : y0 + size * 0.2);
   const tSeal = at + chars.length * per + 0.5;
 
   return {
@@ -121,6 +172,14 @@ register('text.title', (p, ctx) => {
         c.rect.setAttribute('height', (k * size * 1.3).toFixed(1));
       }
       if (subEl) subEl.setAttribute('opacity', clamp((t - at - chars.length * per) / 0.6).toFixed(3));
+      if (ornaments && !ornaments.measured) {
+        // 渲染宽度只与字体有关，与时间无关；量到一次即可（图层隐藏时为 0，下次再量）
+        const w = ornaments.subText.getBBox().width;
+        if (w > 0) {
+          ornaments.place(w);
+          ornaments.measured = true;
+        }
+      }
       if (sealEl) {
         const k = clamp((t - tSeal) / 0.3);
         const s = k <= 0 ? 0 : 1.5 - 0.5 * getEase('outBack')(k);
@@ -187,11 +246,29 @@ register('text.quote', (p, ctx) => {
     }
     g.appendChild(src);
   }
+  // 译文（英文版）：横排放在竖排原文下方
+  let tr = null;
+  if (p.translation) {
+    const maxLen = Math.max(...cols.map((c) => c.length));
+    const cx = vertical ? -((cols.length - 1) * size * 1.5) / 2 : 0;
+    const ts = p.translationSize || 46;
+    let y = vertical ? (maxLen - 1) * size * 1.12 + size * 0.5 + ts : cols.length * size * 1.6 + ts * 1.6;
+    tr = group([], { opacity: 0 });
+    for (const row of String(p.translation).split('\n')) {
+      tr.appendChild(svg('text', { x: cx, y, 'text-anchor': 'middle', 'font-family': SERIF, 'font-style': 'italic', 'font-weight': 500, 'font-size': ts, fill: p.translationColor || color, text: row }));
+      y += ts * 1.25;
+    }
+    if (p.translationSource) {
+      tr.appendChild(svg('text', { x: cx, y: y + ts * 0.15, 'text-anchor': 'middle', 'font-family': ROMAN, 'font-weight': 600, 'font-size': Math.round(ts * 0.5), 'letter-spacing': 3, fill: '#d9604a', text: `— ${p.translationSource}` }));
+    }
+    g.appendChild(tr);
+  }
   return {
     el: g,
     update(t) {
       for (const c of all) c.el.setAttribute('opacity', clamp((t - at - c.i * per) / 0.3).toFixed(3));
       if (src) src.setAttribute('opacity', clamp((t - at - all.length * per - 0.2) / 0.5).toFixed(3));
+      if (tr) tr.setAttribute('opacity', clamp((t - at - all.length * per - 0.4) / 0.8).toFixed(3));
     },
   };
 });
@@ -199,7 +276,8 @@ register('text.quote', (p, ctx) => {
 // 横排说明文字（简洁的信息卡）
 register('text.label', (p, ctx) => {
   const size = p.size || 48;
-  const el = svg('text', { x: 0, y: 0, 'text-anchor': p.anchor || 'middle', 'font-family': p.font === 'brush' ? BRUSH : KAI, 'font-weight': 700, 'font-size': size, fill: p.color || '#2b2422', 'letter-spacing': p.spacing ?? 4, text: p.text || '' });
+  const font = { brush: BRUSH, roman: ROMAN, serif: SERIF }[p.font] || (ctx.latin && !hasHan(p.text) ? SERIF : KAI);
+  const el = svg('text', { x: 0, y: 0, 'text-anchor': p.anchor || 'middle', 'font-family': font, 'font-weight': 700, 'font-size': size, fill: p.color || '#2b2422', 'letter-spacing': p.spacing ?? 4, text: p.text || '' });
   const g = group([el]);
   if (p.outline) {
     el.setAttribute('stroke', p.outline);

@@ -1,5 +1,5 @@
 // 古舆图风格的历史地图：山形符号、双线河流、竖排地名、朱砂路线
-import { svg, group, W, H, PALETTE as P, clamp, getEase, smoothPath, rng, onTwos } from './core.js';
+import { svg, group, W, H, PALETTE as P, clamp, getEase, smoothPath, rng, onTwos, latinWidth } from './core.js';
 import { register } from './registry.js';
 
 const LINE = '#3b2f29';
@@ -8,27 +8,27 @@ const LINE = '#3b2f29';
 export const GEO = {
   western_regions: {
     places: {
-      changan: { name: '长安', x: 1640, y: 650, kind: 'capital' },
-      longxi: { name: '陇西', x: 1470, y: 640, kind: 'city' },
-      wuwei: { name: '河西', x: 1330, y: 520, kind: 'region' },
-      dunhuang: { name: '敦煌', x: 1150, y: 470, kind: 'city', lx: 30, ly: 46 },
-      yumen: { name: '玉门', x: 1100, y: 450, kind: 'pass', lx: -40, ly: -28 },
-      loulan: { name: '楼兰', x: 980, y: 500, kind: 'city' },
-      qiuci: { name: '龟兹', x: 760, y: 430, kind: 'city' },
-      shule: { name: '疏勒', x: 520, y: 470, kind: 'city' },
-      yutian: { name: '于阗', x: 700, y: 640, kind: 'city' },
-      dayuan: { name: '大宛', x: 390, y: 400, kind: 'state' },
-      kangju: { name: '康居', x: 250, y: 260, kind: 'state' },
-      yuezhi: { name: '大月氏', x: 230, y: 520, kind: 'state', lx: 20 },
-      daxia: { name: '大夏', x: 250, y: 660, kind: 'state' },
-      xiongnu: { name: '单于庭', x: 1330, y: 230, kind: 'court' },
-      qiang: { name: '羌', x: 1150, y: 720, kind: 'region' },
-      pamir: { name: '葱岭', x: 440, y: 560, kind: 'mountain' },
+      changan: { name: '长安', en: "Chang'an", x: 1640, y: 650, kind: 'capital' },
+      longxi: { name: '陇西', en: 'Longxi', x: 1470, y: 640, kind: 'city', enly: 44 },
+      wuwei: { name: '河西', en: 'Hexi Corridor', x: 1330, y: 520, kind: 'region', enlx: -80, enly: 52 },
+      dunhuang: { name: '敦煌', en: 'Dunhuang', x: 1150, y: 470, kind: 'city', lx: 30, ly: 46, enlx: 40 },
+      yumen: { name: '玉门', en: 'Yumen Pass', x: 1100, y: 450, kind: 'pass', lx: -40, ly: -28, enlx: -30 },
+      loulan: { name: '楼兰', en: 'Loulan', x: 980, y: 500, kind: 'city' },
+      qiuci: { name: '龟兹', en: 'Kucha', x: 760, y: 430, kind: 'city' },
+      shule: { name: '疏勒', en: 'Kashgar', x: 520, y: 470, kind: 'city' },
+      yutian: { name: '于阗', en: 'Khotan', x: 700, y: 640, kind: 'city' },
+      dayuan: { name: '大宛', en: 'Dayuan', x: 390, y: 400, kind: 'state' },
+      kangju: { name: '康居', en: 'Kangju', x: 250, y: 260, kind: 'state' },
+      yuezhi: { name: '大月氏', en: 'Yuezhi', x: 230, y: 520, kind: 'state', lx: 20 },
+      daxia: { name: '大夏', en: 'Bactria', x: 250, y: 660, kind: 'state', enly: 46 },
+      xiongnu: { name: '单于庭', en: "Chanyu's Court", x: 1330, y: 230, kind: 'court' },
+      qiang: { name: '羌', en: 'Qiang', x: 1150, y: 720, kind: 'region' },
+      pamir: { name: '葱岭', en: 'Pamirs', x: 440, y: 560, kind: 'mountain', enlx: 80, enly: 24 },
     },
     regions: [
-      { name: '匈奴', x: 1180, y: 170, size: 120, color: '#5b2f2a' },
-      { name: '汉', x: 1760, y: 820, size: 150, color: '#a8382a' },
-      { name: '西域', x: 820, y: 560, size: 80, color: '#33476a' },
+      { name: '匈奴', en: 'XIONGNU', x: 1180, y: 170, size: 120, color: '#5b2f2a' },
+      { name: '汉', en: 'HAN', x: 1760, y: 820, size: 150, color: '#a8382a' },
+      { name: '西域', en: 'WESTERN REGIONS', x: 820, y: 560, size: 80, color: '#33476a', enSize: 30 },
     ],
   },
 };
@@ -63,17 +63,23 @@ function river(d, w = 10) {
   ]);
 }
 
+const LATIN_SERIF = 'EB Garamond, LXGW WenKai, serif';
+const LATIN_ROMAN = 'Cinzel, EB Garamond, serif';
+
 function label(name, x, y, { vertical = false, size = 34, color = LINE, box = true, font = 'LXGW WenKai, serif', weight = 700 } = {}) {
   const g = group([], { transform: `translate(${x},${y})` });
   const chars = [...name];
-  if (vertical) {
+  const latin = !/\p{Script=Han}/u.test(name);
+  if (vertical && !latin) {
     const h = chars.length * size * 1.08;
     if (box) g.appendChild(svg('rect', { x: -size * 0.68, y: -size * 0.95, width: size * 1.36, height: h + size * 0.4, fill: '#f4ecd8', stroke: color, 'stroke-width': 2 }));
     chars.forEach((c, i) => g.appendChild(svg('text', { x: 0, y: i * size * 1.08, 'text-anchor': 'middle', 'font-family': font, 'font-weight': weight, 'font-size': size, fill: color, text: c })));
   } else {
-    const w = chars.length * size * 1.02;
-    if (box) g.appendChild(svg('rect', { x: -w / 2 - 10, y: -size * 0.95, width: w + 20, height: size * 1.32, fill: '#f4ecd8', stroke: color, 'stroke-width': 2 }));
-    g.appendChild(svg('text', { x: 0, y: 0, 'text-anchor': 'middle', 'font-family': font, 'font-weight': weight, 'font-size': size, fill: color, text: name }));
+    const w = latin ? latinWidth(name, size) : chars.length * size * 1.02;
+    if (box) g.appendChild(svg('rect', { x: -w / 2 - 10, y: -size * (latin ? 0.85 : 0.95), width: w + 20, height: size * (latin ? 1.18 : 1.32), fill: '#f4ecd8', stroke: color, 'stroke-width': 2 }));
+    // 无框的西文地名加一圈纸色描边，压在山形符号或河流上也能看清
+    const halo = latin && !box ? { stroke: '#eadfc4', 'stroke-width': 6, 'paint-order': 'stroke', 'stroke-linejoin': 'round' } : {};
+    g.appendChild(svg('text', { x: 0, y: 0, 'text-anchor': 'middle', 'font-family': latin ? LATIN_SERIF : font, 'font-weight': latin ? 600 : weight, 'font-size': size, fill: color, text: name, ...halo }));
   }
   return g;
 }
@@ -119,8 +125,14 @@ register('map.ancient', (p, ctx) => {
     g.appendChild(svg('path', { d: 'M1460,600 C1490,520 1530,460 1600,440 C1700,420 1800,420 1960,400', fill: 'none', stroke: '#8a3a2a', 'stroke-width': 5, 'stroke-dasharray': '14 6' }));
   }
   // 区域大字
+  // 西文版本优先取 en（或与语言同名的字段），否则用中文
+  const nameOf = (o) => o[ctx.lang] ?? (ctx.latin ? o.en : undefined) ?? o.name;
   for (const rg of [...(geo?.regions || []), ...(p.regions || [])]) {
-    g.appendChild(svg('text', { x: rg.x, y: rg.y, 'text-anchor': 'middle', 'font-family': 'Ma Shan Zheng, serif', 'font-size': rg.size || 80, fill: rg.color || LINE, opacity: 0.7, text: rg.name }));
+    const name = nameOf(rg);
+    const latin = !/\p{Script=Han}/u.test(name);
+    // 西文区域名用碑刻体大写字母，字号按长度收缩
+    const size = latin ? rg.enSize ?? Math.min((rg.size || 80) * 0.5, 560 / Math.max(1, latinWidth(name, 1, true))) : rg.size || 80;
+    g.appendChild(svg('text', { x: rg.x, y: rg.y, 'text-anchor': 'middle', 'font-family': latin ? LATIN_ROMAN : 'Ma Shan Zheng, serif', 'font-weight': latin ? 700 : 400, 'letter-spacing': latin ? size * 0.12 : 0, 'font-size': size, fill: rg.color || LINE, opacity: 0.7, text: name }));
   }
   // 地名
   const show = p.show || Object.keys(places);
@@ -130,15 +142,21 @@ register('map.ancient', (p, ctx) => {
     const icon = placeIcon(pl.kind);
     icon.setAttribute('transform', `translate(${pl.x},${pl.y})`);
     g.appendChild(icon);
-    const lx = pl.x + (pl.lx ?? 0);
-    const ly = pl.y + (pl.ly ?? (pl.kind === 'region' || pl.kind === 'mountain' ? 10 : -26));
-    g.appendChild(label(pl.name, lx, ly, { size: pl.kind === 'capital' ? 40 : pl.kind === 'state' ? 36 : 30, box: pl.kind !== 'region' && pl.kind !== 'mountain', color: pl.kind === 'capital' ? '#a8382a' : LINE }));
+    const name = nameOf(pl);
+    const latin = !/\p{Script=Han}/u.test(name);
+    // 西文标签可单独微调位置（enlx/enly），避免与邻近地名重叠
+    const lx = pl.x + ((latin ? pl.enlx : undefined) ?? pl.lx ?? 0);
+    const ly = pl.y + ((latin ? pl.enly : undefined) ?? pl.ly ?? (pl.kind === 'region' || pl.kind === 'mountain' ? 10 : -26));
+    const size = (pl.kind === 'capital' ? 40 : pl.kind === 'state' ? 36 : 30) * (latin ? 0.9 : 1);
+    g.appendChild(label(name, lx, ly, { size, box: pl.kind !== 'region' && pl.kind !== 'mountain', color: pl.kind === 'capital' ? '#a8382a' : LINE }));
   }
   // 方位：北
   g.appendChild(group([
     svg('circle', { r: 46, fill: '#f4ecd8', stroke: '#a8382a', 'stroke-width': 3 }),
     svg('path', { d: 'M0,-36 L12,0 L0,-8 L-12,0Z', fill: '#a8382a' }),
-    svg('text', { y: 30, 'text-anchor': 'middle', 'font-family': 'Ma Shan Zheng, serif', 'font-size': 34, fill: '#a8382a', text: '北' }),
+    ctx.latin
+      ? svg('text', { y: 32, 'text-anchor': 'middle', 'font-family': LATIN_ROMAN, 'font-weight': 700, 'font-size': 30, fill: '#a8382a', text: 'N' })
+      : svg('text', { y: 30, 'text-anchor': 'middle', 'font-family': 'Ma Shan Zheng, serif', 'font-size': 34, fill: '#a8382a', text: '北' }),
   ], { transform: `translate(${p.compassX ?? 1800},${p.compassY ?? 150})` }));
 
   // 路线
@@ -167,6 +185,13 @@ register('map.ancient', (p, ctx) => {
       svg('rect', { x: -27, y: -27, width: 54, height: 54, rx: 3, fill: 'none', stroke: '#f4ecd8', 'stroke-width': 2 }),
       svg('text', { y: 14, 'text-anchor': 'middle', 'font-family': 'Ma Shan Zheng, serif', 'font-size': (m.text || '').length > 1 ? 26 : 44, fill: '#f4ecd8', text: m.text || '' }),
     ]);
+    // 印章下方的说明文字（西文版本用来解释印章上的汉字）
+    if (m.label) {
+      const ls = m.labelSize || 26;
+      const w = latinWidth(m.label, ls);
+      el.appendChild(svg('rect', { x: -w / 2 - 10, y: 44, width: w + 20, height: ls * 1.3, rx: 3, fill: '#f4ecd8', stroke: m.color || '#a8382a', 'stroke-width': 2 }));
+      el.appendChild(svg('text', { y: 44 + ls * 0.98, 'text-anchor': 'middle', 'font-family': LATIN_SERIF, 'font-weight': 600, 'font-size': ls, fill: m.color || '#a8382a', text: m.label }));
+    }
     g.appendChild(el);
     return { m, el, x: pl.x + (m.dx ?? 40), y: pl.y + (m.dy ?? -40) };
   });

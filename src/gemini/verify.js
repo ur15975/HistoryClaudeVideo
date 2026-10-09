@@ -53,39 +53,103 @@ export function similarity(a, b) {
   return Math.max(editSimilarity([...norm(a)], [...norm(b)]), editSimilarity(toPinyin(a), toPinyin(b)));
 }
 
-export async function transcribe(wavFile) {
+const TRANSCRIBE_PROMPT = {
+  zh: '逐字转写这段语音中说出的全部内容，开头结尾的每一个字都不要省略，使用简体中文，只输出转写文本。',
+  en: 'Transcribe every word spoken in this audio verbatim, from the very first word to the last. Do not translate or summarize. Output only the transcript.',
+};
+
+export async function transcribe(wavFile, lang = 'zh') {
   const data = fs.readFileSync(wavFile).toString('base64');
   const audio = { inlineData: { mimeType: 'audio/wav', data } };
+  const prompt = TRANSCRIBE_PROMPT[lang.slice(0, 2)] || TRANSCRIBE_PROMPT.en;
   const { json, model } = await generateWithFallback(config.gemini.checkModels, {
-    contents: [{ parts: [audio, { text: '逐字转写这段语音中说出的全部内容，开头结尾的每一个字都不要省略，使用简体中文，只输出转写文本。' }] }],
+    contents: [{ parts: [audio, { text: prompt }] }],
   });
   const parts = json.candidates[0].content.parts;
   const text = parts.map((p) => p.audioTranscription?.text ?? p.text ?? '').join('').trim();
   return { text, model };
 }
 
+// ───────── 英文（及其他拼音文字）比对 ─────────
+const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+  'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+function under100(n) {
+  return n < 20 ? ONES[n] : `${TENS[Math.floor(n / 10)]}${n % 10 ? ` ${ONES[n % 10]}` : ''}`;
+}
+function numberWords(n) {
+  if (n < 100) return under100(n);
+  if (n < 1000) return `${ONES[Math.floor(n / 100)]} hundred${n % 100 ? ` ${under100(n % 100)}` : ''}`;
+  if (n < 1e6) return `${numberWords(Math.floor(n / 1000))} thousand${n % 1000 ? ` ${numberWords(n % 1000)}` : ''}`;
+  if (n < 1e9) return `${numberWords(Math.floor(n / 1e6))} million${n % 1e6 ? ` ${numberWords(n % 1e6)}` : ''}`;
+  return String(n);
+}
+// 年份式读法：126 → one twenty six，1984 → nineteen eighty four
+function yearWords(n) {
+  if (n < 100 || n >= 10000) return numberWords(n);
+  const head = Math.floor(n / 100);
+  const tail = n % 100;
+  return `${numberWords(head)} ${tail === 0 ? 'hundred' : tail < 10 ? `oh ${ONES[tail]}` : under100(tail)}`;
+}
+// 先去掉千分位逗号（10,000 → 10000），再统一大小写、去声调符号与标点
+const latinNorm = (s) => s.replace(/(\d),(?=\d{3}(?!\d))/g, '$1').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+  .replace(/[^\p{L}\d]+/gu, ' ').replace(/\band\b/g, ' ').replace(/\s+/g, ' ').trim();
+const latinForms = (s) => {
+  const n = latinNorm(s);
+  if (!/\d/.test(n)) return [n];
+  return [n, n.replace(/\d+/g, (d) => numberWords(Number(d))), n.replace(/\d+/g, (d) => yearWords(Number(d)))].map(latinNorm);
+};
+function latinSimilarity(a, b) {
+  let best = 0;
+  for (const x of latinForms(a)) {
+    for (const y of latinForms(b)) {
+      best = Math.max(best,
+        editSimilarity([...x.replace(/ /g, '')], [...y.replace(/ /g, '')]),
+        editSimilarity(x.split(' '), y.split(' ')));
+    }
+  }
+  return best;
+}
+
 /**
  * 判定一次听写结果（纯函数，可以对缓存的听写原文反复判定）。
- * expected：字幕原文；spoken：实际送进 TTS 的文本（可能用同音字纠正了读音）；
- * direction：送进 TTS 的语气提示（用来识别“把提示读出来”的情况）
+ * expected：字幕原文；spoken：实际送进 TTS 的文本（可能做过读音改写）；
+ * direction：送进 TTS 的语气提示（用来识别“把提示读出来”的情况）；lang：台词语言
  */
-export function judge(heard, expected, spoken = expected, direction = '') {
-  const forms = numberForms(heard);
-  const score = Math.max(...forms.flatMap((h) => [similarity(expected, h), similarity(spoken, h)]));
-  // 是否把语气提示读了出来：出现“语气”二字，或与提示有 4 字以上的连续重合
-  let leak = /语气/.test(heard) && !/语气/.test(expected);
-  const dir = norm(direction);
-  const h = norm(heard);
-  for (let i = 0; !leak && i + 4 <= dir.length; i++) {
-    const piece = dir.slice(i, i + 4);
-    if (h.includes(piece) && !norm(expected).includes(piece)) leak = true;
+export function judge(heard, expected, spoken = expected, direction = '', lang = 'zh') {
+  const zh = lang.startsWith('zh');
+  let score;
+  let leak = false;
+  if (zh) {
+    const forms = numberForms(heard);
+    score = Math.max(...forms.flatMap((h) => [similarity(expected, h), similarity(spoken, h)]));
+    // 是否把语气提示读了出来：出现“语气”二字，或与提示有 4 字以上的连续重合
+    leak = /语气/.test(heard) && !/语气/.test(expected);
+    const dir = norm(direction);
+    const h = norm(heard);
+    for (let i = 0; !leak && i + 4 <= dir.length; i++) {
+      const piece = dir.slice(i, i + 4);
+      if (h.includes(piece) && !norm(expected).includes(piece)) leak = true;
+    }
+  } else {
+    score = Math.max(latinSimilarity(expected, heard), latinSimilarity(spoken, heard));
+    // 英文导演备注被读出来：出现备注用语，或与备注有连续 3 个词重合
+    const h = ` ${latinNorm(heard)} `;
+    const e = ` ${latinNorm(expected)} `;
+    leak = /voice direction|do not read/.test(h) && !/voice direction|do not read/.test(e);
+    const dw = latinNorm(direction).split(' ').filter(Boolean);
+    for (let i = 0; !leak && i + 3 <= dw.length; i++) {
+      const piece = ` ${dw.slice(i, i + 3).join(' ')} `;
+      if (h.includes(piece) && !e.includes(piece)) leak = true;
+    }
   }
   const ok = !leak && score >= 0.8;
-  const issue = leak ? '把语气提示读了出来' : score < 0.8 ? `与台词差异较大（相似度 ${(score * 100).toFixed(0)}%）` : '';
+  const issue = leak ? (zh ? '把语气提示读了出来' : '把导演备注读了出来')
+    : score < 0.8 ? `与台词差异较大（相似度 ${(score * 100).toFixed(0)}%）` : '';
   return { ok, score, issue };
 }
 
-export async function verifyClip(wavFile, expected, spoken = expected, direction = '') {
-  const { text: heard, model } = await transcribe(wavFile);
-  return { v: VERIFY_VERSION, heard, model, ...judge(heard, expected, spoken, direction) };
+export async function verifyClip(wavFile, expected, spoken = expected, direction = '', lang = 'zh') {
+  const { text: heard, model } = await transcribe(wavFile, lang);
+  return { v: VERIFY_VERSION, lang, heard, model, ...judge(heard, expected, spoken, direction, lang) };
 }

@@ -16,10 +16,11 @@ export async function checkEpisode(episode, voiceDir) {
       const meta = v.cacheFile.replace(/\.wav$/, '.check.json');
       let c = fs.existsSync(meta) ? JSON.parse(fs.readFileSync(meta, 'utf8')) : { ok: true, score: 1, heard: '' };
       if (c.heard) {
-        const spoken = applyPronunciations(line.say || line.text, episode.pronunciations);
+        const lang = episode.lang || 'zh';
+        const spoken = applyPronunciations(line.say || line.text, episode.pronunciations, lang);
         const role = episode.cast[line.speaker] || {};
-        const direction = buildPrompt(line, episode.cast, episode.pronunciations) !== spoken ? [role.style, line.tone].filter(Boolean).join('，') : '';
-        c = { ...c, ...judge(c.heard, line.text, spoken, direction) };
+        const direction = buildPrompt(line, episode.cast, episode.pronunciations, lang) !== spoken ? [role.style, line.tone].filter(Boolean).join(lang.startsWith('zh') ? '，' : ', ') : '';
+        c = { ...c, ...judge(c.heard, line.text, spoken, direction, lang) };
       }
       rows.push({ id, text: line.text, ...c, duration: v.duration, tempo: v.tempo });
       const mark = c.ok ? '\x1b[32m✔\x1b[0m' : '\x1b[31m✖\x1b[0m';
